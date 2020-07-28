@@ -8,6 +8,7 @@
 
 #include "key_setup.h"
 #include "sensor.h"
+#include "navigator.h"
 
 
 // Local functions
@@ -43,6 +44,7 @@ int main(int argc, char *argv[]){
         gen_dist_agg_keys(num_sensors, pubkey);
 
         // Run navigator
+        run_navigator(pubkey, prvkey);
 
 
     // Remaining processes are the sensors

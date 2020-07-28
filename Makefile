@@ -1,6 +1,6 @@
 CC = mpicc
 CFLAGS= -g -Wall -O3
-LIBS = -lgmp -lgsl -lgslcblas -lssl -lcrypto
+LIBS = -lgmp -lgsl -lgslcblas -lm -lssl -lcrypto
 
 PHEFOLDER = libpaillier-0.8
 BUILDFOLDER = build

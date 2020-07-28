@@ -7,7 +7,8 @@
 #define MATRIX_OPS_H
 
 #include <gmp.h>
-#include "libpaillier-0.8/paillier.h"
+
+#include "key_setup.h"
 
 // Types
 

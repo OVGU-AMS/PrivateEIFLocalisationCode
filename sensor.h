@@ -7,9 +7,12 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <mpi.h>
 #include <gmp.h>
+
 #include "key_setup.h"
+#include "matrix_ops.h"
 
 #define SENSOR_VARIANCE 5.0
 
