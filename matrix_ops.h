@@ -8,7 +8,7 @@
 
 #include <gmp.h>
 
-#include "key_setup.h"
+#include "key_distribution.h"
 
 // Types
 

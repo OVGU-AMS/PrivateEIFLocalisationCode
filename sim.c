@@ -6,7 +6,8 @@
 #include <stdlib.h>
 #include <mpi.h>
 
-#include "key_setup.h"
+#include "encoded_paillier_agg.h"
+#include "key_distribution.h"
 #include "sensor.h"
 #include "navigator.h"
 
@@ -35,21 +36,41 @@ int main(int argc, char *argv[]){
 
     // Process 0 acts as key distributer, and then the navigator during the simulation
     if (proc_id == 0){
-        
-        // Key generation and distribution
-        paillier_pubkey_t *pubkey;
-        paillier_prvkey_t *prvkey;
-        gen_phe_keys(PAILLIER_BITSIZE, &pubkey, &prvkey);
+        pubkey_t *pubkey;
+        prvkey_t *prvkey;
+        aggkey_t *aggkeys = (aggkey_t*)malloc(num_sensors*sizeof(aggkey_t));
+
+        // Generate Paillier keys
+        key_gen(PAILLIER_BITSIZE, &pubkey, &prvkey);
+
+        // Generate aggregation keys
+        agg_key_gen(pubkey, num_sensors, aggkeys);
+
+        // Broadcast Paillier key
         dist_phe_key(num_sensors, pubkey);
-        gen_dist_agg_keys(num_sensors, pubkey);
+
+        // Distributed aggregation keys
+        dist_agg_keys(num_sensors, aggkeys);
+
+        // Free aggregation keys
+        for (int s=0; s<num_sensors; s++){
+            free_aggkey(aggkeys[s]);
+        }
+        free(aggkeys);
+        aggkeys = NULL;
 
         // Run navigator
         run_navigator(pubkey, prvkey);
+        fprintf(stderr, "Navigator finished.\n");
 
+        // Free Paillier keys
+        free_pubkey(pubkey);
+        free_prvkey(prvkey);
 
     // Remaining processes are the sensors
     } else {
         run_sensor(proc_id);
+        fprintf(stderr, "Sensor %d finished.\n", proc_id);
     }
 
     // Finish up
@@ -61,7 +82,7 @@ int main(int argc, char *argv[]){
 // Return code error printer for MPI calls
 void check_mpi_error(int mpi_err, char *message){
     if (mpi_err != 0){
-        fprintf(stderr, "MPI Error! Code: %d - %s", mpi_err, message);
-        exit(0);
+        fprintf(stderr, "MPI Error! Code: %d - %s\n", mpi_err, message);
+        MPI_Abort(MPI_COMM_WORLD, 1);
     }
 }

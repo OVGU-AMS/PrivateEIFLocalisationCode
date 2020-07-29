@@ -53,7 +53,7 @@
 	This represents a Paillier public key, which is basically just the
 	modulus n. The other values should be considered private.
 */
-typedef struct
+typedef struct pubkeyTag
 {
 	int bits;  /* e.g., 1024 */
 	mpz_t n;   /* public modulus n = p q */
@@ -67,7 +67,7 @@ typedef struct
   function (lambda) of the modulus. The other value is kept for
   efficiency and should be considered private.
 */
-typedef struct
+typedef struct prvkeyTag
 {
 	mpz_t lambda;    /* lambda(n), i.e., lcm(p-1,q-1) */
 	mpz_t x;   /* cached to avoid recomputing */
@@ -87,7 +87,7 @@ typedef struct
   These can also be converted to or from byte arrays (for example in
   order to store them in a file).
 */
-typedef struct
+typedef struct ciphertextTag
 {
 	mpz_t c;
 } paillier_ciphertext_t;

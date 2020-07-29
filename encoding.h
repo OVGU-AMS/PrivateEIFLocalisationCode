@@ -15,11 +15,7 @@
 
 // Encoding for Paillier with single multiplication (assumes mpz already initialised)
 
-void encode_from_dbl(mpz_t res, double x, unsigned int mod_bits, unsigned int frac_bits);
-double decode_to_dbl(mpz_t e, int mult, unsigned int mod_bits, unsigned int frac_bits);
-
-// Encoding for ORE
-
-unsigned long int encode_dbl_cmp(double x, unsigned int mod_bits, unsigned int frac_bits);
+void encode_from_dbl(mpz_t res, double x, unsigned int mults, unsigned int mod_bits, unsigned int frac_bits);
+double decode_to_dbl(mpz_t e, unsigned int mults, unsigned int mod_bits, unsigned int frac_bits);
 
 #endif

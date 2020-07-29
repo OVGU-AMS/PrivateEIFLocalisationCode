@@ -6,7 +6,7 @@ PHEFOLDER = libpaillier-0.8
 BUILDFOLDER = build
 
 MAIN_SRC = sim.c
-SRC = key_setup.c time_hash.c sensor.c navigator.c encoding.c matrix_ops.c
+SRC = encoding.c time_hash.c encoded_paillier_agg.c key_distribution.c sensor.c navigator.c
 OBJ = $(patsubst %.c,$(BUILDFOLDER)/%.o, $(SRC))
 
 SIMNAME = sim

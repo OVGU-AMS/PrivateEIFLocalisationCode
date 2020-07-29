@@ -6,88 +6,102 @@
 
 
 // Local functions
-void get_bcast_state_var(paillier_ciphertext_t *state_var, char *state_var_enc_str);
+void get_bcast_state_var(ciphertext_t *state_var, char *enc_str);
+void sensor_input_err_check(int val, int expected, char *msg, int id);
 
 
 void run_sensor(int id){
     // Key vars
     char key_str[MAX_KEY_SERIALISATION_CHARS];
-    paillier_pubkey_t *pubkey;
-    mpz_t agg_key;
+    pubkey_t *pubkey;
+    aggkey_t agg_key;
 
     // Measurements file var
     FILE *measurements_fp;
 
     // Get Paillier public key
     MPI_Bcast(key_str, MAX_KEY_SERIALISATION_CHARS, MPI_CHAR, 0, MPI_COMM_WORLD);
-    pubkey = paillier_pubkey_from_hex(key_str);
+    pubkey = deserialise_pubkey(key_str);
 
-    //printf("id: %d, key: %s\n", id, paillier_pubkey_to_hex(pubkey));
+    printf("id: %d, key: %s\n", id, key_str);
 
     // Get sensor's private aggregation key
     MPI_Recv(key_str, MAX_KEY_SERIALISATION_CHARS, MPI_CHAR, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-    mpz_init_set_str(agg_key, key_str, SERIALISATION_BASE);
+    deserialise_aggkey(agg_key, key_str);
 
-    //printf("id: %d, agg key: %s\n", id, key_str);
+    printf("id: %d, agg key: %s\n", id, key_str);
 
     // Open sensor measurements file - TODO currently setup for debugging input only!
     char f_name[100];
     sprintf(f_name, "input/debug_sensor%d.txt", id);
     measurements_fp = fopen(f_name, "r");
     if (measurements_fp == NULL){
-        printf("%d Could not open measurement file!\n", id);
-        exit(0);
+        fprintf(stderr, "%d Could not open measurement file!\n", id);
+        MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
     // Number of timesteps
     int time_steps;
-    fscanf(measurements_fp, "%d", &time_steps);
+    sensor_input_err_check(fscanf(measurements_fp, "%d", &time_steps), 1, "Could not read timesteps!", id);
     //printf("%d steps=%d\n", id, time_steps);
 
     // State dimension
     int state_dim;
-    fscanf(measurements_fp, "%d", &state_dim);
+    sensor_input_err_check(fscanf(measurements_fp, "%d", &state_dim), 1, "Could not read state dimension!", id);
     //printf("%d state_dim=%d\n", id, state_dim);
 
     // Sensor location
     double loc_x, loc_y;
-    fscanf(measurements_fp, "%lf %lf", &loc_x, &loc_y);
-    //printf("%d loc=(%lf, %lf)\n", id, loc_x, loc_y);
+    sensor_input_err_check(fscanf(measurements_fp, "%lf %lf", &loc_x, &loc_y), 2, "Could not read sensor location!", id);
+    printf("%d loc=(%lf, %lf)\n", id, loc_x, loc_y);
 
     // State info vars
-    char state_var_enc_str[MAX_ENC_SERIALISATION_CHARS];
-    paillier_ciphertext_t *x = paillier_create_enc_zero();
-    paillier_ciphertext_t *x2 = paillier_create_enc_zero();
-    paillier_ciphertext_t *x3 = paillier_create_enc_zero();
-    paillier_ciphertext_t *y = paillier_create_enc_zero();
-    paillier_ciphertext_t *xy = paillier_create_enc_zero();
-    paillier_ciphertext_t *x2y = paillier_create_enc_zero();
-    paillier_ciphertext_t *y2 = paillier_create_enc_zero();
-    paillier_ciphertext_t *xy2 = paillier_create_enc_zero();
-    paillier_ciphertext_t *y3 = paillier_create_enc_zero();
+    char enc_str[MAX_ENC_SERIALISATION_CHARS];
+    ciphertext_t *x = NULL;
+    ciphertext_t *x2 = NULL;
+    ciphertext_t *x3 = NULL;
+    ciphertext_t *y = NULL;
+    ciphertext_t *xy = NULL;
+    ciphertext_t *x2y = NULL;
+    ciphertext_t *y2 = NULL;
+    ciphertext_t *xy2 = NULL;
+    ciphertext_t *y3 = NULL;
 
     // Result vars
-    c_mtrx_t *hrh;
-    c_mtrx_t *hrz;
-    paillier_ciphertext_t *partial_sum;
-    paillier_plaintext_t *weight;
+    //c_mtrx_t *hrh;
+    //c_mtrx_t *hrz;
+    ciphertext_t *partial_sum;
+    double weight;
 
+    // Measreument vars
     double measurement;
+    double z;
+    double inv_R_adj;
+
     for (int t=0; t<time_steps; t++){
         // Get state variable encryption broadcasts x,x2,x3,y,xy,x2y,y2,xy2,y3 in that order
-        get_bcast_state_var(x,   state_var_enc_str);
-        get_bcast_state_var(x2,  state_var_enc_str);
-        get_bcast_state_var(x3,  state_var_enc_str);
-        get_bcast_state_var(y,   state_var_enc_str);
-        get_bcast_state_var(xy,  state_var_enc_str);
-        get_bcast_state_var(x2y, state_var_enc_str);
-        get_bcast_state_var(y2,  state_var_enc_str);
-        get_bcast_state_var(xy2, state_var_enc_str);
-        get_bcast_state_var(y3,  state_var_enc_str);
+        get_bcast_state_var(x,   enc_str);
+        get_bcast_state_var(x2,  enc_str);
+        get_bcast_state_var(x3,  enc_str);
+        get_bcast_state_var(y,   enc_str);
+        get_bcast_state_var(xy,  enc_str);
+        get_bcast_state_var(x2y, enc_str);
+        get_bcast_state_var(y2,  enc_str);
+        get_bcast_state_var(xy2, enc_str);
+        get_bcast_state_var(y3,  enc_str);
 
         // Get next measurement
-        fscanf(measurements_fp, "%lf", &measurement);
+        sensor_input_err_check(fscanf(measurements_fp, "%lf", &measurement), 1, "Could not read measurement!", id);
         //printf("%d m=%lf\n", id, measurement);
+
+        // Modified measurement for filter, adjusted to be zero-mean
+        z = pow(measurement, 2) - SENSOR_VARIANCE;
+
+        // TODO noise approx may be doable better (overestimate for better consistency?)
+        // Measreument noise of the adjusted measreument, approximated by using measurement for distance
+        inv_R_adj = 1.0/(2*(2*(pow(measurement, 2) - SENSOR_VARIANCE)*SENSOR_VARIANCE + pow(SENSOR_VARIANCE, 2)));
+
+        // Compute HRH weighted sums
 
     }
 
@@ -97,8 +111,14 @@ void run_sensor(int id){
 }
 
 
-void get_bcast_state_var(paillier_ciphertext_t *state_var, char *state_var_enc_str){
-    MPI_Bcast(state_var_enc_str, MAX_KEY_SERIALISATION_CHARS, MPI_CHAR, 0, MPI_COMM_WORLD);
-    mpz_set_str(state_var->c, state_var_enc_str, SERIALISATION_BASE);
-    gmp_printf("state var: %Zd\n", state_var->c);
+void get_bcast_state_var(ciphertext_t *state_var, char *enc_str){
+    MPI_Bcast(enc_str, MAX_KEY_SERIALISATION_CHARS, MPI_CHAR, 0, MPI_COMM_WORLD);
+    state_var = deserialise_encryption(enc_str);
+}
+
+void sensor_input_err_check(int val, int expected, char *msg, int id){
+    if (val != expected){
+        fprintf(stderr, "%d : %s\n", id, msg);
+        MPI_Abort(MPI_COMM_WORLD, 1);
+    }
 }

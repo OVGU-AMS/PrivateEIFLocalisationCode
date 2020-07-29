@@ -7,13 +7,12 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include <mpi.h>
 #include <gmp.h>
 #include <gsl/gsl_linalg.h>
+#include "encoded_paillier_agg.h"
 
-#include "key_setup.h"
-#include "encoding.h"
-
-void run_navigator(paillier_pubkey_t *pubkey, paillier_prvkey_t *prvkey);
+void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey);
 
 #endif
