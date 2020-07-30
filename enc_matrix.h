@@ -19,6 +19,10 @@ typedef struct CiphertextMatrixTag c_mtrx_t;
 c_mtrx_t* c_mtrx_alloc(int rows, int cols);
 void c_mtrx_free(c_mtrx_t *m);
 
+// ====================== // Init // ====================== //
+
+void init_c_mtrx(c_mtrx_t *m);
+
 // ====================== // Getting and setting values // ====================== //
 // Get and set by reference only
 

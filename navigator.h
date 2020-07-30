@@ -12,7 +12,8 @@
 #include <gmp.h>
 #include <gsl/gsl_linalg.h>
 #include "encoded_paillier_agg.h"
+#include "enc_matrix.h"
 
-void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey);
+void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int number_sensors);
 
 #endif

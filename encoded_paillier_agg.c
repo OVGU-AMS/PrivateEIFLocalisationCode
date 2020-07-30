@@ -121,6 +121,37 @@ ciphertext_t* init_ciphertext(){
     return paillier_create_enc_zero();
 }
 
+void copy_encryption(ciphertext_t *dst, ciphertext_t *src){
+    mpz_set(dst->c, src->c);
+}
+
+void encrypt_zero(pubkey_t *pubkey, ciphertext_t *ct){
+    paillier_plaintext_t *p = paillier_plaintext_from_ui(0);
+    paillier_enc(ct, pubkey, p, paillier_get_rand_devurandom);
+    paillier_freeplaintext(p);
+}
+
+void refresh_encryption(pubkey_t *pubkey, ciphertext_t *dst, ciphertext_t *src){
+    // Required for large random number generation. Copied from paillier library
+    mpz_t r;
+    gmp_randstate_t rnd;
+    init_rand_agg(rnd, paillier_get_rand_devrandom, (pubkey->bits)*2 / 8 + 1);
+
+    // Init new noise
+    mpz_init(r);
+
+    // Generate random key
+    do
+        mpz_urandomb(r, rnd, (pubkey->bits));
+    while(mpz_cmp(r, pubkey->n) >= 0);
+
+    // Compute r^N
+    mpz_powm(r, r, pubkey->n, pubkey->n_squared);
+
+    // Multiply exiting encryption refreshing it
+    mpz_mul(dst->c, r, src->c);
+}
+
 // 888    888                                                                         888      d8b
 // 888    888                                                                         888      Y8P
 // 888    888                                                                         888
@@ -135,10 +166,10 @@ ciphertext_t* init_ciphertext(){
 
 // Encode and encrypt a float, given public key and number of multiplications for encoding
 void encode_and_enc(pubkey_t *pubkey, ciphertext_t *res, double a, unsigned int mults){
-    paillier_plaintext_t *p_text = paillier_plaintext_from_ui(0);
-    encode_from_dbl(p_text->m, a, mults, MOD_BITS, FRAC_BITS);
-    paillier_enc(res, pubkey, p_text, paillier_get_rand_devurandom);
-    paillier_freeplaintext(p_text);
+    paillier_plaintext_t *p = paillier_plaintext_from_ui(0);
+    encode_from_dbl(p->m, a, mults, MOD_BITS, FRAC_BITS);
+    paillier_enc(res, pubkey, p, paillier_get_rand_devurandom);
+    paillier_freeplaintext(p);
 }
 
 // Decrypt and decode encryption to a float given necessary keys and the number of multiplications for decoding

@@ -60,7 +60,7 @@ int main(int argc, char *argv[]){
         aggkeys = NULL;
 
         // Run navigator
-        run_navigator(pubkey, prvkey);
+        run_navigator(pubkey, prvkey, num_sensors);
         fprintf(stderr, "Navigator finished.\n");
 
         // Free Paillier keys

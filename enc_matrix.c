@@ -78,6 +78,28 @@ void c_mtrx_free(c_mtrx_t *m){
     return;
 }
 
+// 8888888          d8b 888
+//   888            Y8P 888
+//   888                888
+//   888   88888b.  888 888888
+//   888   888 "88b 888 888
+//   888   888  888 888 888
+//   888   888  888 888 Y88b.
+// 8888888 888  888 888  "Y888
+
+
+
+
+void init_c_mtrx(c_mtrx_t *m){
+    for(int i=0; i<m->size1; i++){
+        for(int j=0; j<m->size2; j++){
+            if (m->data[i][j] == NULL){
+                m->data[i][j] = init_ciphertext();
+            }
+        }
+    }
+}
+
 //  .d8888b.           888           d88P  .d8888b.           888
 // d88P  Y88b          888          d88P  d88P  Y88b          888
 // 888    888          888         d88P   Y88b.               888

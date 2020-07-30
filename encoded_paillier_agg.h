@@ -6,6 +6,7 @@
 #define ENC_ENCODED_PAILLIER_AGG_H
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <gmp.h>
 #include "encoding.h"
 
@@ -38,8 +39,12 @@ ciphertext_t* deserialise_encryption(char *encryption_serialisation);
 // ====================== // Init // ====================== //
 
 ciphertext_t* init_ciphertext();
+void copy_encryption(ciphertext_t *dst, ciphertext_t *src);
+void encrypt_zero(pubkey_t *pubkey, ciphertext_t *ct);
+void refresh_encryption(pubkey_t *pubkey, ciphertext_t *dst, ciphertext_t *src);
 
 // ====================== // Homomorphic operations // ====================== //
+// encode_and_enc does no allocation
 
 void encode_and_enc(pubkey_t *pubkey, ciphertext_t *res, double a, unsigned int mults);
 double dec_and_decode(pubkey_t *pubkey, prvkey_t *prvkey, ciphertext_t *ct, unsigned int mults);
