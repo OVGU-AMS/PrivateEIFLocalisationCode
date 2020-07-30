@@ -12,6 +12,7 @@
 #include <mpi.h>
 #include <gmp.h>
 #include "encoded_paillier_agg.h"
+#include "enc_matrix.h"
 
 #define SENSOR_VARIANCE 5.0
 

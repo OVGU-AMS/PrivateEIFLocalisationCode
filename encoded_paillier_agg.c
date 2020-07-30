@@ -9,7 +9,17 @@
 void init_rand_agg(gmp_randstate_t rnd, paillier_get_rand_t get_rand, int bytes);
 
 
-// ====================== // Keygen // ====================== //
+// 888    d8P
+// 888   d8P
+// 888  d8P
+// 888d88K      .d88b.  888  888  .d88b.   .d88b.  88888b.
+// 8888888b    d8P  Y8b 888  888 d88P"88b d8P  Y8b 888 "88b
+// 888  Y88b   88888888 888  888 888  888 88888888 888  888
+// 888   Y88b  Y8b.     Y88b 888 Y88b 888 Y8b.     888  888
+// 888    Y88b  "Y8888   "Y88888  "Y88888  "Y8888  888  888
+//                           888      888
+//                      Y8b d88P Y8b d88P
+//                       "Y88P"   "Y88P"
 
 // Use wrapped paillier library to genenrate keys
 void key_gen(int paillier_bitsize, pubkey_t **pubkey, prvkey_t **prvkey){
@@ -44,7 +54,17 @@ void agg_key_gen(pubkey_t *pubkey, int participants, aggkey_t *key_array){
     mpz_mod(key_array[participants-1], key_array[participants-1], pubkey->n_squared);
 }
 
-// ====================== // MPI serialisation // ====================== //
+// 888b     d888 8888888b. 8888888                                d8b          888 d8b                   888    d8b
+// 8888b   d8888 888   Y88b  888                                  Y8P          888 Y8P                   888    Y8P
+// 88888b.d88888 888    888  888                                               888                       888
+// 888Y88888P888 888   d88P  888        .d8888b   .d88b.  888d888 888  8888b.  888 888 .d8888b   8888b.  888888 888  .d88b.  88888b.
+// 888 Y888P 888 8888888P"   888        88K      d8P  Y8b 888P"   888     "88b 888 888 88K          "88b 888    888 d88""88b 888 "88b
+// 888  Y8P  888 888         888        "Y8888b. 88888888 888     888 .d888888 888 888 "Y8888b. .d888888 888    888 888  888 888  888
+// 888   "   888 888         888             X88 Y8b.     888     888 888  888 888 888      X88 888  888 Y88b.  888 Y88..88P 888  888
+// 888       888 888       8888888       88888P'  "Y8888  888     888 "Y888888 888 888  88888P' "Y888888  "Y888 888  "Y88P"  888  888
+
+
+
 
 // Serialisation of paillier public key for MPI communication
 // Does not allocate buffer
@@ -85,13 +105,33 @@ ciphertext_t* deserialise_encryption(char *encryption_serialisation){
     return ct;
 }
 
-// ====================== // Init // ====================== //
+// 8888888          d8b 888
+//   888            Y8P 888
+//   888                888
+//   888   88888b.  888 888888
+//   888   888 "88b 888 888
+//   888   888  888 888 888
+//   888   888  888 888 Y88b.
+// 8888888 888  888 888  "Y888
+
+
+
 
 ciphertext_t* init_ciphertext(){
     return paillier_create_enc_zero();
 }
 
-// ====================== // Homomorphic operations // ====================== //
+// 888    888                                                                         888      d8b
+// 888    888                                                                         888      Y8P
+// 888    888                                                                         888
+// 8888888888  .d88b.  88888b.d88b.   .d88b.  88888b.d88b.   .d88b.  888d888 88888b.  88888b.  888  .d8888b       .d88b.  88888b.  .d8888b
+// 888    888 d88""88b 888 "888 "88b d88""88b 888 "888 "88b d88""88b 888P"   888 "88b 888 "88b 888 d88P"         d88""88b 888 "88b 88K
+// 888    888 888  888 888  888  888 888  888 888  888  888 888  888 888     888  888 888  888 888 888           888  888 888  888 "Y8888b.
+// 888    888 Y88..88P 888  888  888 Y88..88P 888  888  888 Y88..88P 888     888 d88P 888  888 888 Y88b.         Y88..88P 888 d88P      X88
+// 888    888  "Y88P"  888  888  888  "Y88P"  888  888  888  "Y88P"  888     88888P"  888  888 888  "Y8888P       "Y88P"  88888P"   88888P'
+//                                                                           888                                          888
+//                                                                           888                                          888
+//                                                                           888                                          888
 
 // Encode and encrypt a float, given public key and number of multiplications for encoding
 void encode_and_enc(pubkey_t *pubkey, ciphertext_t *res, double a, unsigned int mults){
@@ -118,13 +158,33 @@ void add_encs(pubkey_t *pubkey, ciphertext_t *res, ciphertext_t *ct1, ciphertext
 
 }
 
-// ====================== // Aggregation // ====================== //
+//        d8888                                                     888    d8b
+//       d88888                                                     888    Y8P
+//      d88P888                                                     888
+//     d88P 888  .d88b.   .d88b.  888d888 .d88b.   .d88b.   8888b.  888888 888  .d88b.  88888b.
+//    d88P  888 d88P"88b d88P"88b 888P"  d8P  Y8b d88P"88b     "88b 888    888 d88""88b 888 "88b
+//   d88P   888 888  888 888  888 888    88888888 888  888 .d888888 888    888 888  888 888  888
+//  d8888888888 Y88b 888 Y88b 888 888    Y8b.     Y88b 888 888  888 Y88b.  888 Y88..88P 888  888
+// d88P     888  "Y88888  "Y88888 888     "Y8888   "Y88888 "Y888888  "Y888 888  "Y88P"  888  888
+//                   888      888                      888
+//              Y8b d88P Y8b d88P                 Y8b d88P
+//               "Y88P"   "Y88P"                   "Y88P"
 
 void add_agg_noise(pubkey_t *pubkey, ciphertext_t *res, ciphertext_t *ct, int stamp){
 
 }
 
-// ====================== // Free memory // ====================== //
+// 8888888888
+// 888
+// 888
+// 8888888 888d888 .d88b.   .d88b.       88888b.d88b.   .d88b.  88888b.d88b.   .d88b.  888d888 888  888
+// 888     888P"  d8P  Y8b d8P  Y8b      888 "888 "88b d8P  Y8b 888 "888 "88b d88""88b 888P"   888  888
+// 888     888    88888888 88888888      888  888  888 88888888 888  888  888 888  888 888     888  888
+// 888     888    Y8b.     Y8b.          888  888  888 Y8b.     888  888  888 Y88..88P 888     Y88b 888
+// 888     888     "Y8888   "Y8888       888  888  888  "Y8888  888  888  888  "Y88P"  888      "Y88888
+//                                                                                                  888
+//                                                                                             Y8b d88P
+//                                                                                              "Y88P"
 
 void free_pubkey(pubkey_t *pubkey){
     paillier_freepubkey(pubkey);
@@ -142,9 +202,17 @@ void free_ciphertext(ciphertext_t *ct){
     paillier_freeciphertext(ct);
 }
 
-// ====================== // Misc // ====================== //
+// 888                                888
+// 888                                888
+// 888                                888
+// 888      .d88b.   .d8888b  8888b.  888
+// 888     d88""88b d88P"        "88b 888
+// 888     888  888 888      .d888888 888
+// 888     Y88..88P Y88b.    888  888 888
+// 88888888 "Y88P"   "Y8888P "Y888888 888
 
-// ====================== // Local // ====================== //
+
+
 
 // Copied from libpaillier-X.X library for getting random mpz values for aggregation
 void init_rand_agg(gmp_randstate_t rnd, paillier_get_rand_t get_rand, int bytes){

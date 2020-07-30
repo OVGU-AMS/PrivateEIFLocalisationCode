@@ -68,8 +68,8 @@ void run_sensor(int id){
     ciphertext_t *y3 = NULL;
 
     // Result vars
-    //c_mtrx_t *hrh;
-    //c_mtrx_t *hrz;
+    c_mtrx_t *hrh;
+    c_mtrx_t *hrz;
     ciphertext_t *partial_sum;
     double weight;
 
