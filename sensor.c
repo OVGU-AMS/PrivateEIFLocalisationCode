@@ -293,7 +293,7 @@ void send_enc_mat(c_mtrx_t *mat, int rows, int cols, char *enc_strs, MPI_Request
         for (int c=0; c<cols; c++){
             ind = enc_strs+(r*cols*MAX_ENC_SERIALISATION_CHARS+c*MAX_ENC_SERIALISATION_CHARS);
             serialise_encryption(get_c_mtrx(mat, r, c), ind);
-            printf("len enc (%d %d) of (%d %d) %ld\n", r, c, rows, cols, strlen(ind));
+            //printf("len enc (%d %d) of (%d %d) %ld\n", r, c, rows, cols, strlen(ind));
         }
     }
     MPI_Wait(req, MPI_STATUS_IGNORE);

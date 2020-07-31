@@ -156,6 +156,13 @@ void decrypt_mtrx(pubkey_t *pubkey, prvkey_t *prvkey, c_mtrx_t *enc_mat, gsl_mat
     return;
 }
 
+void decrypt_vctr(pubkey_t *pubkey, prvkey_t *prvkey, c_mtrx_t *enc_mat, gsl_vector *plain_vec, unsigned int mults){
+    for (int j=0; j<enc_mat->size2;j++){
+        gsl_vector_set(plain_vec, j, dec_and_decode(pubkey, prvkey, enc_mat->data[0][j], mults));
+    }
+    return;
+}
+
 //  .d88888b.
 // d88P" "Y88b
 // 888     888
