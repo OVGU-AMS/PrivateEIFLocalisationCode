@@ -24,13 +24,13 @@ void run_sensor(int id){
     MPI_Bcast(key_str, MAX_KEY_SERIALISATION_CHARS, MPI_CHAR, 0, MPI_COMM_WORLD);
     pubkey = deserialise_pubkey(key_str);
 
-    printf("id: %d, key: %s\n", id, key_str);
+    //printf("id: %d, key: %s\n", id, key_str);
 
     // Get sensor's private aggregation key
     MPI_Recv(key_str, MAX_KEY_SERIALISATION_CHARS, MPI_CHAR, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     deserialise_aggkey(agg_key, key_str);
 
-    printf("id: %d, agg key: %s\n", id, key_str);
+    //printf("id: %d, agg key: %s\n", id, key_str);
 
     // Open sensor measurements file - TODO currently setup for debugging input only!
     char f_name[100];
@@ -54,7 +54,7 @@ void run_sensor(int id){
     // Sensor location
     double loc_x, loc_y;
     sensor_input_err_check(fscanf(measurements_fp, "%lf %lf", &loc_x, &loc_y), 2, "Could not read sensor location!", id);
-    printf("%d loc=(%lf, %lf)\n", id, loc_x, loc_y);
+    //printf("%d loc=(%lf, %lf)\n", id, loc_x, loc_y);
 
     // State info vars
     char enc_str[MAX_ENC_SERIALISATION_CHARS];
@@ -113,11 +113,12 @@ void run_sensor(int id){
         // Compute HRH weighted sums
 
         // hrh[0][0] = (4*invRadj)*x2 + (-8*invRadj*sx)*x + (4*invRadj*sx**2)
+        //printf("sensor %d h[0][0] = %lf\n", id, (4*inv_R_adj)*pow(0.1289492000, 2) + (-8*inv_R_adj*loc_x)*0.1289492000 + (4*inv_R_adj*pow(loc_x,2)));
         mat_elem = get_c_mtrx(hrh, 0, 0);
         encode_and_mult_enc(pubkey, mat_elem, x2, 4*inv_R_adj, 0);
         encode_and_mult_enc(pubkey, partial_sum, x, -8*inv_R_adj*loc_x, 0);
         add_encs(pubkey, mat_elem, mat_elem, partial_sum);
-        encode_and_enc(pubkey, partial_sum, 4*inv_R_adj*pow(loc_x, 2), 1);
+        encode_and_enc_no_noise(pubkey, partial_sum, 4*inv_R_adj*pow(loc_x, 2), 1);
         add_encs(pubkey, mat_elem, mat_elem, partial_sum);
         refresh_encryption(pubkey, mat_elem, mat_elem);
 
@@ -128,7 +129,7 @@ void run_sensor(int id){
         add_encs(pubkey, mat_elem, mat_elem, partial_sum);
         encode_and_mult_enc(pubkey, partial_sum, y, -4*inv_R_adj*loc_x, 0);
         add_encs(pubkey, mat_elem, mat_elem, partial_sum);
-        encode_and_enc(pubkey, partial_sum, 4*inv_R_adj*loc_x*loc_y, 1);
+        encode_and_enc_no_noise(pubkey, partial_sum, 4*inv_R_adj*loc_x*loc_y, 1);
         add_encs(pubkey, mat_elem, mat_elem, partial_sum);
         refresh_encryption(pubkey, mat_elem, mat_elem);
 
@@ -142,7 +143,7 @@ void run_sensor(int id){
         encode_and_mult_enc(pubkey, mat_elem, y2, 4*inv_R_adj, 0);
         encode_and_mult_enc(pubkey, partial_sum, y, -8*inv_R_adj*loc_y, 0);
         add_encs(pubkey, mat_elem, mat_elem, partial_sum);
-        encode_and_enc(pubkey, partial_sum, 4*inv_R_adj*pow(loc_y, 2), 1);
+        encode_and_enc_no_noise(pubkey, partial_sum, 4*inv_R_adj*pow(loc_y, 2), 1);
         add_encs(pubkey, mat_elem, mat_elem, partial_sum);
         refresh_encryption(pubkey, mat_elem, mat_elem);
 
@@ -167,15 +168,15 @@ void run_sensor(int id){
         //          (2*invRadj)*xy2 + (-2*invRadj*sx)*y2
         mat_elem = get_c_mtrx(hrz, 0, 0);
         encode_and_mult_enc(pubkey, mat_elem, x, 2*inv_R_adj*z, 0);
-        encode_and_enc(pubkey, partial_sum, -2*inv_R_adj*loc_x*z, 1);
+        encode_and_enc_no_noise(pubkey, partial_sum, -2*inv_R_adj*loc_x*z, 1);
         add_encs(pubkey, mat_elem, mat_elem, partial_sum);
         encode_and_mult_enc(pubkey, partial_sum, x, -2*inv_R_adj*pow(loc_x, 2), 0);
         add_encs(pubkey, mat_elem, mat_elem, partial_sum);
-        encode_and_enc(pubkey, partial_sum, 2*inv_R_adj*pow(loc_x, 3), 1);
+        encode_and_enc_no_noise(pubkey, partial_sum, 2*inv_R_adj*pow(loc_x, 3), 1);
         add_encs(pubkey, mat_elem, mat_elem, partial_sum);
         encode_and_mult_enc(pubkey, partial_sum, x, -2*inv_R_adj*pow(loc_y, 2), 0);
         add_encs(pubkey, mat_elem, mat_elem, partial_sum);
-        encode_and_enc(pubkey, partial_sum, 2*inv_R_adj*loc_x*pow(loc_y, 2), 1);
+        encode_and_enc_no_noise(pubkey, partial_sum, 2*inv_R_adj*loc_x*pow(loc_y, 2), 1);
         add_encs(pubkey, mat_elem, mat_elem, partial_sum);
         encode_and_mult_enc(pubkey, partial_sum, x3, 2*inv_R_adj, 0);
         add_encs(pubkey, mat_elem, mat_elem, partial_sum);
@@ -193,15 +194,15 @@ void run_sensor(int id){
         mat_elem = get_c_mtrx(hrz, 0, 2);
         encode_and_mult_enc(pubkey, mat_elem, y, 2*inv_R_adj*z, 0);
         add_encs(pubkey, mat_elem, mat_elem, partial_sum);
-        encode_and_enc(pubkey, partial_sum, -2*inv_R_adj*loc_y*z, 1);
+        encode_and_enc_no_noise(pubkey, partial_sum, -2*inv_R_adj*loc_y*z, 1);
         add_encs(pubkey, mat_elem, mat_elem, partial_sum);
         encode_and_mult_enc(pubkey, mat_elem, y, -2*inv_R_adj*pow(loc_x, 2), 0);
         add_encs(pubkey, mat_elem, mat_elem, partial_sum);
-        encode_and_enc(pubkey, partial_sum, 2*inv_R_adj*loc_y*pow(loc_x, 2), 1);
+        encode_and_enc_no_noise(pubkey, partial_sum, 2*inv_R_adj*loc_y*pow(loc_x, 2), 1);
         add_encs(pubkey, mat_elem, mat_elem, partial_sum);
         encode_and_mult_enc(pubkey, mat_elem, y, -2*inv_R_adj*pow(loc_y, 2), 0);
         add_encs(pubkey, mat_elem, mat_elem, partial_sum);
-        encode_and_enc(pubkey, partial_sum, 2*inv_R_adj*pow(loc_y, 3), 1);
+        encode_and_enc_no_noise(pubkey, partial_sum, 2*inv_R_adj*pow(loc_y, 3), 1);
         add_encs(pubkey, mat_elem, mat_elem, partial_sum);
         encode_and_mult_enc(pubkey, mat_elem, x2y, 2*inv_R_adj, 0);
         add_encs(pubkey, mat_elem, mat_elem, partial_sum);
@@ -220,13 +221,15 @@ void run_sensor(int id){
         // Add aggregation noise
 
         // TODO TEMP checking
-        ciphertext_t *x = init_ciphertext();
-        encode_and_enc(pubkey, x, 5.0, 1);
-        set_c_mtrx(hrh, 0, 0, x);
+        // ciphertext_t *x = init_ciphertext();
+        // encode_and_enc(pubkey, x, 5.0, 1);
+        // set_c_mtrx(hrh, 0, 0, x);
 
         // Send encrypted matrix and vector
         send_enc_mat(hrh, state_dim, state_dim, hrh_enc_strs, 0);
         send_enc_mat(hrz, 1, state_dim, hrz_enc_strs, 1);
+
+        //printf("\nSensor %d sending : %s\n\n", id, hrh_enc_strs);
     }
 
 
@@ -238,6 +241,7 @@ void run_sensor(int id){
 void get_bcast_state_var(ciphertext_t **state_var, char *enc_str){
     MPI_Bcast(enc_str, MAX_KEY_SERIALISATION_CHARS, MPI_CHAR, 0, MPI_COMM_WORLD);
     *state_var = deserialise_encryption(enc_str);
+    //printf("got %s\n", enc_str);
 }
 
 void send_enc_mat(c_mtrx_t *mat, int rows, int cols, char *enc_strs, int send_tag){

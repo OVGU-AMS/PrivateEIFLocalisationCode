@@ -148,8 +148,9 @@ void refresh_encryption(pubkey_t *pubkey, ciphertext_t *dst, ciphertext_t *src){
     // Compute r^N
     mpz_powm(r, r, pubkey->n, pubkey->n_squared);
 
-    // Multiply exiting encryption refreshing it
+    // Multiply exiting encryption mod N^2 refreshing it
     mpz_mul(dst->c, r, src->c);
+    mpz_mod(dst->c, dst->c, pubkey->n_squared);
 }
 
 // 888    888                                                                         888      d8b
@@ -172,21 +173,32 @@ void encode_and_enc(pubkey_t *pubkey, ciphertext_t *res, double a, unsigned int 
     paillier_freeplaintext(p);
 }
 
+// Encode and put g to power of encoding mod N^2 (encrypt without noise term)
+void encode_and_enc_no_noise(pubkey_t *pubkey, ciphertext_t *res, double a, unsigned int mults){
+    paillier_plaintext_t *p = paillier_plaintext_from_ui(0);
+    encode_from_dbl(p->m, a, mults, MOD_BITS, FRAC_BITS);
+    mpz_powm(res->c, pubkey->n_plusone, p->m, pubkey->n_squared);
+    paillier_freeplaintext(p);
+}
+
 // Decrypt and decode encryption to a float given necessary keys and the number of multiplications for decoding
 double dec_and_decode(pubkey_t *pubkey, prvkey_t *prvkey, ciphertext_t *ct, unsigned int mults){
-    return 0.0;
+    paillier_plaintext_t *p = paillier_plaintext_from_ui(0);
+    paillier_dec(p, pubkey, prvkey, ct);
+    return decode_to_dbl(p->m, mults, MOD_BITS, FRAC_BITS);
 }
 
-void encode_and_add_enc(pubkey_t *pubkey, ciphertext_t *res, ciphertext_t *ct, double a, unsigned int mults){
-
-}
-
+// Encode value and multipy given encryption by it
 void encode_and_mult_enc(pubkey_t *pubkey, ciphertext_t *res, ciphertext_t *ct, double a, unsigned int mults){
-
+    paillier_plaintext_t *p = paillier_plaintext_from_ui(0);
+    encode_from_dbl(p->m, a, mults, MOD_BITS, FRAC_BITS);
+    paillier_exp(pubkey, res, ct, p);
+    paillier_freeplaintext(p);
 }
 
+// Add two encrypted values together
 void add_encs(pubkey_t *pubkey, ciphertext_t *res, ciphertext_t *ct1, ciphertext_t *ct2){
-
+    paillier_mul(pubkey, res, ct1, ct2);
 }
 
 //        d8888                                                     888    d8b

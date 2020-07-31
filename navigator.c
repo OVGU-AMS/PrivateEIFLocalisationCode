@@ -7,7 +7,7 @@
 
 // Private functions
 void broadcast_enc_state_var(pubkey_t *pubkey, ciphertext_t *ct, char *enc_str, double val);
-void get_c_mtrx_str_from_sensor(int src_sensor, int rows, int cols, char *enc_strs, int send_tag, MPI_Request *r);
+void get_enc_str_from_sensor(int src_sensor, int rows, int cols, char *enc_strs, int send_tag, MPI_Request *r);
 void get_c_mtrx_from_enc_str(c_mtrx_t *m, int rows, int cols, char *enc_strs);
 void print_gsl_vector(gsl_vector *v, int d);
 void print_gsl_matrix(gsl_matrix *m, int r, int c);
@@ -90,8 +90,8 @@ void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int num_sensors){
         broadcast_enc_state_var(pubkey, state_enc, enc_str, pow(gsl_vector_get(state, 2), 3));
         
         for (int s=0; s<num_sensors; s++){
-            get_c_mtrx_str_from_sensor(s+1, dimension, dimension, hrh_enc_strs[s], 0, hrh_requests+s);
-            get_c_mtrx_str_from_sensor(s+1, 1, dimension, hrz_enc_strs[s], 1, hrz_requests+s);
+            get_enc_str_from_sensor(s+1, dimension, dimension, hrh_enc_strs[s], 0, hrh_requests+s);
+            get_enc_str_from_sensor(s+1, 1, dimension, hrz_enc_strs[s], 1, hrz_requests+s);
         }
 
         for (int s=0; s<num_sensors; s++){
@@ -105,6 +105,7 @@ void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int num_sensors){
             get_c_mtrx_from_enc_str(hrhs[s], dimension, dimension, hrh_enc_strs[s]);
             get_c_mtrx_from_enc_str(hrzs[s], 1, dimension, hrz_enc_strs[s]);
             decrypt_mtrx(pubkey, prvkey, hrhs[s], covariance, 1);
+            printf("mat from %d:\n", s+1);
             print_gsl_matrix(covariance, dimension, dimension);
         }
         
@@ -121,7 +122,7 @@ void broadcast_enc_state_var(pubkey_t *pubkey, ciphertext_t *ct, char *enc_str, 
     MPI_Bcast(enc_str, MAX_KEY_SERIALISATION_CHARS, MPI_CHAR, 0, MPI_COMM_WORLD);
 }
 
-void get_c_mtrx_str_from_sensor(int src_sensor, int rows, int cols, char *enc_strs, int send_tag, MPI_Request *r){
+void get_enc_str_from_sensor(int src_sensor, int rows, int cols, char *enc_strs, int send_tag, MPI_Request *r){
     MPI_Irecv(enc_strs, rows*cols*MAX_ENC_SERIALISATION_CHARS, MPI_CHAR, src_sensor, send_tag, MPI_COMM_WORLD, r);
 }
 

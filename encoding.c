@@ -41,7 +41,7 @@ void encode_from_dbl(mpz_t res, double x, unsigned int mults, unsigned int mod_b
 
     mpz_ui_pow_ui(mx_enc, 2, mod_bits);
     if (mults > 0){
-        mpz_mul_ui(frac_factor, frac_factor, mults+1);
+        frac_bits = frac_bits*(mults+1);
     }
     mpz_ui_pow_ui(frac_factor, 2, frac_bits);
 
@@ -91,16 +91,16 @@ double decode_to_dbl(mpz_t e, unsigned int mults, unsigned int mod_bits, unsigne
 
     mpz_ui_pow_ui(mx_enc, 2, mod_bits);
     mpz_ui_pow_ui(mx_enc_hlf, 2, mod_bits-1);
+
     if (mults > 0){
-        mpz_mul_ui(frac_factor, frac_factor, mults+1);
+        frac_bits = frac_bits*(mults+1);
     }
     mpz_ui_pow_ui(frac_factor, 2, frac_bits);
-    
     
     mpf_init(e_f);
     mpf_init(frac_factor_f);
 
-    mpz_powm_ui(e_copy, e, 1, mx_enc);
+    mpz_mod(e_copy, e, mx_enc);
 
     
 
@@ -126,6 +126,8 @@ double decode_to_dbl(mpz_t e, unsigned int mults, unsigned int mod_bits, unsigne
 
     mpf_clear(e_f);
     mpf_clear(frac_factor_f);
+
+    gmp_printf("Decoding %Zd to %lf (%d mults)\n", e, res, mults);
 
     return res;
 }

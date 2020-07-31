@@ -47,8 +47,8 @@ void refresh_encryption(pubkey_t *pubkey, ciphertext_t *dst, ciphertext_t *src);
 // encode_and_enc does no allocation
 
 void encode_and_enc(pubkey_t *pubkey, ciphertext_t *res, double a, unsigned int mults);
+void encode_and_enc_no_noise(pubkey_t *pubkey, ciphertext_t *res, double a, unsigned int mults);
 double dec_and_decode(pubkey_t *pubkey, prvkey_t *prvkey, ciphertext_t *ct, unsigned int mults);
-void encode_and_add_enc(pubkey_t *pubkey, ciphertext_t *res, ciphertext_t *ct, double a, unsigned int mults);
 void encode_and_mult_enc(pubkey_t *pubkey, ciphertext_t *res, ciphertext_t *ct, double a, unsigned int mults);
 void add_encs(pubkey_t *pubkey, ciphertext_t *res, ciphertext_t *ct1, ciphertext_t *ct2);
 
