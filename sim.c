@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi.h>
-
 #include "encoded_paillier_agg.h"
 #include "key_distribution.h"
 #include "sensor.h"
@@ -39,6 +38,8 @@ int main(int argc, char *argv[]){
         pubkey_t *pubkey;
         prvkey_t *prvkey;
         aggkey_t *aggkeys = (aggkey_t*)malloc(num_sensors*sizeof(aggkey_t));
+        char *aggkey_strs = (char *)malloc(num_sensors*MAX_KEY_SERIALISATION_CHARS*sizeof(char));
+        MPI_Request *agg_requests = (MPI_Request *)malloc(num_sensors*sizeof(MPI_Request));
 
         // Generate Paillier keys
         key_gen(PAILLIER_BITSIZE, &pubkey, &prvkey);
@@ -50,18 +51,26 @@ int main(int argc, char *argv[]){
         dist_phe_key(num_sensors, pubkey);
 
         // Distributed aggregation keys
-        dist_agg_keys(num_sensors, aggkeys);
+        dist_agg_keys(num_sensors, aggkeys, aggkey_strs, agg_requests);
 
         // Free aggregation keys
         for (int s=0; s<num_sensors; s++){
             free_aggkey(aggkeys[s]);
         }
         free(aggkeys);
-        aggkeys = NULL;
+
+        // Free aggregation key string buffers
+        free(aggkey_strs);
 
         // Run navigator
         run_navigator(pubkey, prvkey, num_sensors);
         fprintf(stderr, "Navigator finished.\n");
+
+        // Ensure all aggregation keys were sent and free array
+        for (int s=0; s<num_sensors; s++){
+            MPI_Wait(agg_requests+s, MPI_STATUS_IGNORE);
+        }
+        free(agg_requests);
 
         // Free Paillier keys
         free_pubkey(pubkey);

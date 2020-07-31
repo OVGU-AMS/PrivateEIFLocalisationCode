@@ -13,6 +13,6 @@
 #include "encoded_paillier_agg.h"
 
 void dist_phe_key(int num_sensors, pubkey_t *pubkey);
-void dist_agg_keys(int num_sensors, aggkey_t *aggkeys);
+void dist_agg_keys(int num_sensors, aggkey_t *aggkeys, char *aggkey_strs, MPI_Request *agg_requests);
 
 #endif
