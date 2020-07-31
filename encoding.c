@@ -127,7 +127,5 @@ double decode_to_dbl(mpz_t e, unsigned int mults, unsigned int mod_bits, unsigne
     mpf_clear(e_f);
     mpf_clear(frac_factor_f);
 
-    gmp_printf("Decoding %Zd to %lf (%d mults)\n", e, res, mults);
-
     return res;
 }
