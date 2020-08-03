@@ -47,13 +47,24 @@ def plot_debug_track():
                 covariances.append(np.array([[float(x) for x in out_f.readline().split()] for _ in range(dim)]))
 
 
+    # Plot initial estimate
+    ax.scatter(init_state[0], init_state[2], marker='x', color='red')
+    ax.add_artist(get_cov_ellipse(np.array([[init_cov[0][0], init_cov[0][2]],[init_cov[2][0], init_cov[2][2]]]), 
+                                        np.array([init_state[0],init_state[2]]), 
+                                        2, fill=False, linestyle='-', edgecolor='orange', zorder=1))
+
+
+    # Plot ground truth
     ax.plot([x[0] for x in gts], [x[2] for x in gts], marker='.', color='gray')
     ax.plot([x[0] for x in states], [x[2] for x in states], marker='x', color='green')
+
+    # plot filter estimates
     for state, cov in zip(states, covariances):
         ax.add_artist(get_cov_ellipse(np.array([[cov[0][0], cov[0][2]],[cov[2][0], cov[2][2]]]), 
                                         np.array([state[0],state[2]]), 
                                         2, fill=False, linestyle='-', edgecolor='royalblue', zorder=1))
 
+    # display the picture
     plt.show()
 
 
