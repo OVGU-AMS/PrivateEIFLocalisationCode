@@ -65,6 +65,17 @@ void run_sensor(int id){
     MPI_Request hrz_request;
     MPI_Request agg_request;
 
+    // 888    d8P
+    // 888   d8P
+    // 888  d8P
+    // 888d88K      .d88b.  888  888 .d8888b
+    // 8888888b    d8P  Y8b 888  888 88K
+    // 888  Y88b   88888888 888  888 "Y8888b.
+    // 888   Y88b  Y8b.     Y88b 888      X88
+    // 888    Y88b  "Y8888   "Y88888  88888P'
+    //                           888
+    //                      Y8b d88P
+    //                       "Y88P"
 
     // Get Paillier public key
     MPI_Bcast(key_str, MAX_KEY_SERIALISATION_CHARS, MPI_CHAR, 0, MPI_COMM_WORLD);
@@ -96,6 +107,18 @@ void run_sensor(int id){
     sensor_input_err_check(fscanf(measurements_fp, "%lf %lf", &loc_x, &loc_y), 2, "Could not read sensor location!", id);
     //printf("%d loc=(%lf, %lf)\n", id, loc_x, loc_y);
 
+    // 888b     d888                                        d8888 888 888
+    // 8888b   d8888                                       d88888 888 888
+    // 88888b.d88888                                      d88P888 888 888
+    // 888Y88888P888  .d88b.  88888b.d88b.               d88P 888 888 888  .d88b.   .d8888b
+    // 888 Y888P 888 d8P  Y8b 888 "888 "88b             d88P  888 888 888 d88""88b d88P"
+    // 888  Y8P  888 88888888 888  888  888            d88P   888 888 888 888  888 888
+    // 888   "   888 Y8b.     888  888  888 d8b       d8888888888 888 888 Y88..88P Y88b.
+    // 888       888  "Y8888  888  888  888 Y8P      d88P     888 888 888  "Y88P"   "Y8888P
+
+
+
+
     // Allocate space for result vars now that state dimension is known
     hrh = c_mtrx_alloc(state_dim, state_dim);
     hrz = c_mtrx_alloc(1, state_dim);
@@ -108,17 +131,26 @@ void run_sensor(int id){
     // Initialise repeated sends
     MPI_Send_init(hrh_enc_strs, state_dim*state_dim*MAX_ENC_SERIALISATION_CHARS, MPI_CHAR, 0, 0, MPI_COMM_WORLD, &hrh_request);
     MPI_Send_init(hrz_enc_strs, 1*state_dim*MAX_ENC_SERIALISATION_CHARS, MPI_CHAR, 0, 1, MPI_COMM_WORLD, &hrz_request);
+        
+    //  .d8888b.  d8b
+    // d88P  Y88b Y8P
+    // Y88b.
+    //  "Y888b.   888 88888b.d88b.
+    //     "Y88b. 888 888 "888 "88b
+    //       "888 888 888  888  888
+    // Y88b  d88P 888 888  888  888
+    //  "Y8888P"  888 888  888  888
+
+
+
 
     // Wait for Aggregation key to arrive if not already, and sync with all processes before beginning simulation
     MPI_Wait(&agg_request, MPI_STATUS_IGNORE);
     MPI_Barrier(MPI_COMM_WORLD);
 
     // Tracking simulation begins
-    time_steps = 2; // TODO TEMP
+    //time_steps = 2; // TODO TEMP
     for (int t=0; t<time_steps; t++){
-        // Get all state variable encryption broadcasts x,x2,x3,y,xy,x2y,y2,xy2,y3
-        get_all_bcast_state_vars(&enc_state, enc_str);
-
         // Get next measurement
         sensor_input_err_check(fscanf(measurements_fp, "%lf", &measurement), 1, "Could not read measurement!", id);
 
@@ -128,6 +160,9 @@ void run_sensor(int id){
         // TODO noise approx may be doable better (overestimate for better consistency?)
         // Measreument noise of the adjusted measreument, approximated by using measurement for distance
         inv_R_adj = 1.0/(2*(2*(pow(measurement, 2) - SENSOR_VARIANCE)*SENSOR_VARIANCE + pow(SENSOR_VARIANCE, 2)));
+
+        // Get all state variable encryption broadcasts x,x2,x3,y,xy,x2y,y2,xy2,y3
+        get_all_bcast_state_vars(&enc_state, enc_str);
 
         // 888    888 8888888b.  888    888
         // 888    888 888   Y88b 888    888
@@ -246,9 +281,30 @@ void run_sensor(int id){
         //printf("\nSensor %d sending : %s\n\n", id, hrh_enc_strs);
     }
 
+    // 888b     d888                                 8888888888
+    // 8888b   d8888                                 888
+    // 88888b.d88888                                 888
+    // 888Y88888P888  .d88b.  88888b.d88b.           8888888 888d888 .d88b.   .d88b.
+    // 888 Y888P 888 d8P  Y8b 888 "888 "88b          888     888P"  d8P  Y8b d8P  Y8b
+    // 888  Y8P  888 88888888 888  888  888          888     888    88888888 88888888
+    // 888   "   888 Y8b.     888  888  888 d8b      888     888    Y8b.     Y8b.
+    // 888       888  "Y8888  888  888  888 Y8P      888     888     "Y8888   "Y8888
+
+
+
+
     // Done with repeated sends, free the reused request structs
     MPI_Request_free(&hrh_request);
     MPI_Request_free(&hrz_request);
+
+    // Free sending vars
+    free(hrh_enc_strs);
+    free(hrz_enc_strs);
+
+    // Free encrypted matrix and vector vars
+    free_ciphertext(partial_sum);
+    c_mtrx_free(hrh);
+    c_mtrx_free(hrz);
 
     // Done with measurements, close file and finish
     fclose(measurements_fp);

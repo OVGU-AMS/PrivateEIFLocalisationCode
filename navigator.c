@@ -6,6 +6,7 @@
 
 
 // Private functions
+void init_filter_model(gsl_matrix *F, gsl_matrix *Q);
 void broadcast_all_enc_state_vars(pubkey_t *pubkey, ciphertext_t *ct, char *enc_str, gsl_vector *state);
 void broadcast_enc_state_var(pubkey_t *pubkey, ciphertext_t *ct, char *enc_str, double val);
 void get_enc_str_from_sensor(int src_sensor, int rows, int cols, char *enc_strs, int send_tag, MPI_Request *r);
@@ -49,18 +50,28 @@ void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int num_sensors){
     int dimension;
 
     // Filter vars
+    gsl_matrix *F;
+    gsl_matrix *Q;
     gsl_vector *state;
     gsl_matrix *covariance;
-
     gsl_vector *info_vec;
     gsl_matrix *info_mat;
-
     gsl_vector *sen_hrz_sum;
     gsl_matrix *sen_hrh_sum;
+    gsl_permutation *perm;
+    int sig_num;
 
-    // Allocate for state and covariance which will be read from file
-    state = gsl_vector_alloc(dimension);
-    covariance = gsl_matrix_alloc(dimension, dimension);
+    // 8888888                            888
+    //   888                              888
+    //   888                              888
+    //   888   88888b.  88888b.  888  888 888888
+    //   888   888 "88b 888 "88b 888  888 888
+    //   888   888  888 888  888 888  888 888
+    //   888   888  888 888 d88P Y88b 888 Y88b.
+    // 8888888 888  888 88888P"   "Y88888  "Y888
+    //                  888
+    //                  888
+    //                  888
 
     // Open track file for filter init - TODO currently setup for debugging input only!
     sprintf(f_name, "input/debug_track1.txt");
@@ -73,6 +84,10 @@ void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int num_sensors){
     // Read number of time steps and the state dimension
     nav_input_err_check(fscanf(track_fp, "%d\n%d", &time_steps, &dimension), 2, "Could not read timesteps and dimension from track file!");
     //printf("0 steps=%d, dimension=%d\n", time_steps, dimension);
+
+    // Allocate state and covariance first as they must be populated from file
+    state = gsl_vector_alloc(dimension);
+    covariance = gsl_matrix_alloc(dimension, dimension);
 
     // Read initial state and covariance from track file
     for(int i=0; i<dimension; i++){
@@ -90,6 +105,18 @@ void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int num_sensors){
 
     // Done with init data, close file
     fclose(track_fp);
+
+    // 888b     d888                                        d8888 888 888
+    // 8888b   d8888                                       d88888 888 888
+    // 88888b.d88888                                      d88P888 888 888
+    // 888Y88888P888  .d88b.  88888b.d88b.               d88P 888 888 888  .d88b.   .d8888b
+    // 888 Y888P 888 d8P  Y8b 888 "888 "88b             d88P  888 888 888 d88""88b d88P"
+    // 888  Y8P  888 88888888 888  888  888            d88P   888 888 888 888  888 888
+    // 888   "   888 Y8b.     888  888  888 d8b       d8888888888 888 888 Y88..88P Y88b.
+    // 888       888  "Y8888  888  888  888 Y8P      d88P     888 888 888  "Y88P"   "Y8888P
+
+
+
 
     // Allocate memory for sending the encrypted state
     state_enc = init_ciphertext();
@@ -118,19 +145,41 @@ void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int num_sensors){
     received_hrh = (int *)malloc(num_sensors*sizeof(int));
     received_hrz = (int *)malloc(num_sensors*sizeof(int));
 
-    // Allocate memory for other filter vars
+    // Allocate for state and covariance which will be read from file
+    // state and covariance allocated above for file input
+    info_vec = gsl_vector_alloc(dimension);
+    info_mat = gsl_matrix_alloc(dimension, dimension);
+    F = gsl_matrix_alloc(dimension, dimension);
+    Q = gsl_matrix_alloc(dimension, dimension);
+    perm = gsl_permutation_alloc(dimension);
     sen_hrh_sum = gsl_matrix_alloc(dimension, dimension);
     sen_hrz_sum = gsl_vector_alloc(dimension);
+    init_filter_model(F, Q);
+
+    //  .d8888b.  d8b
+    // d88P  Y88b Y8P
+    // Y88b.
+    //  "Y888b.   888 88888b.d88b.
+    //     "Y88b. 888 888 "888 "88b
+    //       "888 888 888  888  888
+    // Y88b  d88P 888 888  888  888
+    //  "Y8888P"  888 888  888  888
+
+
+
 
     // Sync with all processes before simulation begins
     MPI_Barrier(MPI_COMM_WORLD);
-
+    
     // Begin tracking
-    time_steps = 2; // TODO TEMP
+    //time_steps = 2; // TODO TEMP
     for(int t=0; t<time_steps; t++){
 
         // Filter prediction step
-
+        gsl_blas_dgemv(CblasNoTrans, 1.0, F, state, 0.0, state);
+        gsl_blas_dsymm(CblasRight, CblasUpper, 1.0, covariance, F, 0.0, covariance);
+        gsl_blas_dgemm(CblasNoTrans, CblasTrans, 1.0, covariance, F, 0.0, covariance);
+        gsl_matrix_add(covariance, Q);
 
         // Encrypt and broadcast the state variables
         broadcast_all_enc_state_vars(pubkey, state_enc, enc_str, state);
@@ -201,39 +250,130 @@ void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int num_sensors){
         // Decrypt the summed sensor matrices and vectors
         decrypt_mtrx(pubkey, prvkey, hrh_sum, sen_hrh_sum, 1);
         decrypt_vctr(pubkey, prvkey, hrz_sum, sen_hrz_sum, 1);
-        printf("Matrix sum:\n");
-        print_gsl_matrix(sen_hrh_sum, dimension, dimension);
-        printf("Vector sum:\n");
-        print_gsl_vector(sen_hrz_sum, dimension);
+        // printf("Matrix sum:\n");
+        // print_gsl_matrix(sen_hrh_sum, dimension, dimension);
+        // printf("Vector sum:\n");
+        // print_gsl_vector(sen_hrz_sum, dimension);
 
-        // Filter update step
+        // Filter update step, convert to information filter form then back
+        gsl_linalg_LU_decomp(covariance, perm, &sig_num);
+        gsl_linalg_LU_invert(covariance, perm, info_mat);
+        gsl_blas_dsymv(CblasUpper, 1.0, info_mat, state, 0.0, info_vec);
+
+        gsl_vector_add(info_vec, sen_hrz_sum);
+        gsl_matrix_add(info_mat, sen_hrh_sum);
+
+        gsl_linalg_LU_decomp(info_mat, perm, &sig_num);
+        gsl_linalg_LU_invert(info_mat, perm, covariance);
+        gsl_blas_dsymv(CblasUpper, 1.0, covariance, info_vec, 0.0, state);
 
         // Output estimated location
-        
+        printf("State:\n");
+        print_gsl_vector(state, dimension);
+        printf("Covariance:\n");
+        print_gsl_matrix(covariance, dimension, dimension);
+
     }
 
-    // Free state sending variable
-    free_ciphertext(state_enc);
+    // 888b     d888                                 8888888888
+    // 8888b   d8888                                 888
+    // 88888b.d88888                                 888
+    // 888Y88888P888  .d88b.  88888b.d88b.           8888888 888d888 .d88b.   .d88b.
+    // 888 Y888P 888 d8P  Y8b 888 "888 "88b          888     888P"  d8P  Y8b d8P  Y8b
+    // 888  Y8P  888 88888888 888  888  888          888     888    88888888 88888888
+    // 888   "   888 Y8b.     888  888  888 d8b      888     888    Y8b.     Y8b.
+    // 888       888  "Y8888  888  888  888 Y8P      888     888     "Y8888   "Y8888
 
+
+
+
+    // Free filter vars
+    gsl_permutation_free(perm);
+    gsl_matrix_free(sen_hrh_sum);
+    gsl_vector_free(sen_hrz_sum);
+    gsl_matrix_free(Q);
+    gsl_matrix_free(F);
+    gsl_matrix_free(info_mat);
+    gsl_vector_free(info_vec);
+    gsl_matrix_free(covariance);
+    gsl_vector_free(state);
+
+    // Free receiving vars
+    free(received_hrh);
+    free(received_hrz);
+    for (int s=0; s<num_sensors; s++){
+        free(hrh_enc_strs[s]);
+        free(hrz_enc_strs[s]);
+    }
+    free(hrh_enc_strs);
+    free(hrz_enc_strs);
+    free(hrh_requests);
+    free(hrz_requests);
+
+    // Free encrypted storage vars
     c_mtrx_free(hrh_sum);
     c_mtrx_free(hrz_sum);
     for (int s=0; s<num_sensors; s++){
         c_mtrx_free(hrhs[s]);
         c_mtrx_free(hrzs[s]);
-        free(hrh_enc_strs[s]);
-        free(hrz_enc_strs[s]);
     }
-
     free(hrhs);
     free(hrzs);
-    free(hrh_enc_strs);
-    free(hrz_enc_strs);
+    free_ciphertext(state_enc);
+    
+}
 
-    free(hrh_requests);
-    free(hrz_requests);
+// Initialise values for process model matrices F and Q
+void init_filter_model(gsl_matrix *F, gsl_matrix *Q){
+    // Noise strength
+    double q = 0.01;
 
-    free(received_hrh);
-    free(received_hrz);
+    // Time step
+    double t = 0.5;
+
+    // F matrix
+    gsl_matrix_set(F, 0, 0, 1);
+    gsl_matrix_set(F, 0, 1, t);
+    gsl_matrix_set(F, 0, 2, 0);
+    gsl_matrix_set(F, 0, 3, 0);
+
+    gsl_matrix_set(F, 1, 0, 0);
+    gsl_matrix_set(F, 1, 1, 1);
+    gsl_matrix_set(F, 1, 2, 0);
+    gsl_matrix_set(F, 1, 3, 0);
+
+    gsl_matrix_set(F, 2, 0, 0);
+    gsl_matrix_set(F, 2, 1, 0);
+    gsl_matrix_set(F, 2, 2, 1);
+    gsl_matrix_set(F, 2, 3, t);
+
+    gsl_matrix_set(F, 3, 0, 0);
+    gsl_matrix_set(F, 3, 1, 0);
+    gsl_matrix_set(F, 3, 2, 0);
+    gsl_matrix_set(F, 3, 3, 1);
+
+    // Q matrix
+    gsl_matrix_set(Q, 0, 0, pow(t, 3)/3);
+    gsl_matrix_set(Q, 0, 1, pow(t, 2)/2);
+    gsl_matrix_set(Q, 0, 2, 0);
+    gsl_matrix_set(Q, 0, 3, 0);
+
+    gsl_matrix_set(Q, 1, 0, pow(t, 2)/2);
+    gsl_matrix_set(Q, 1, 1, t);
+    gsl_matrix_set(Q, 1, 2, 0);
+    gsl_matrix_set(Q, 1, 3, 0);
+
+    gsl_matrix_set(Q, 2, 0, 0);
+    gsl_matrix_set(Q, 2, 1, 0);
+    gsl_matrix_set(Q, 2, 2, pow(t, 3)/3);
+    gsl_matrix_set(Q, 2, 3, pow(t, 2)/2);
+
+    gsl_matrix_set(Q, 3, 0, 0);
+    gsl_matrix_set(Q, 3, 1, 0);
+    gsl_matrix_set(Q, 3, 2, pow(t, 2)/2);
+    gsl_matrix_set(Q, 3, 3, t);
+
+    gsl_matrix_scale(Q, q);
 }
 
 // Encrypt and broadcast the state variables x,x2,x3,y,xy,x2y,y2,xy2,y3 in that order
