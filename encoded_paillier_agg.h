@@ -7,7 +7,9 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <gmp.h>
+#include <openssl/evp.h>
 #include "encoding.h"
 
 #define PAILLIER_BITSIZE 1024
@@ -54,7 +56,7 @@ void add_encs(pubkey_t *pubkey, ciphertext_t *res, ciphertext_t *ct1, ciphertext
 
 // ====================== // Aggregation // ====================== //
 
-void add_agg_noise(pubkey_t *pubkey, ciphertext_t *res, ciphertext_t *ct, int stamp);
+void add_agg_noise(pubkey_t *pubkey, aggkey_t aggkey, ciphertext_t *ct, char *stamp, int stamp_len);
 
 // ====================== // Free memory // ====================== //
 

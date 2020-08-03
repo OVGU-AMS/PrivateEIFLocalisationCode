@@ -268,6 +268,8 @@ void run_sensor(int id){
         refresh_encryption(pubkey, get_c_mtrx(hrz, 0, 3), mat_elem);
 
         // Add aggregation noise
+        add_agg_noise_c_mtrx(pubkey, agg_key, hrh, t, 0);
+        add_agg_noise_c_mtrx(pubkey, agg_key, hrz, t, 1);
 
         // TODO TEMP checking
         // ciphertext_t *x = init_ciphertext();

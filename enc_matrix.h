@@ -40,5 +40,9 @@ void decrypt_vctr(pubkey_t *pubkey, prvkey_t *prvkey, c_mtrx_t *enc_mat, gsl_vec
 
 void add_c_mtrx_c_mtrx(pubkey_t *pubkey, c_mtrx_t *enc_mat1, c_mtrx_t *enc_mat2, c_mtrx_t *out);
 
+// ====================== // Aggregation // ====================== //
+
+void add_agg_noise_c_mtrx(pubkey_t *pubkey, aggkey_t aggkey, c_mtrx_t *m, int timestamp, int identifier);
+
 
 #endif

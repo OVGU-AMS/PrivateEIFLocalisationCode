@@ -7,6 +7,7 @@
 
 // Local
 void init_rand_agg(gmp_randstate_t rnd, paillier_get_rand_t get_rand, int bytes);
+int PKCS1_MGF1(unsigned char *mask, long len, const unsigned char *seed, long seedlen, const EVP_MD *dgst);
 
 
 // 888    d8P
@@ -213,8 +214,72 @@ void add_encs(pubkey_t *pubkey, ciphertext_t *res, ciphertext_t *ct1, ciphertext
 //              Y8b d88P Y8b d88P                 Y8b d88P
 //               "Y88P"   "Y88P"                   "Y88P"
 
-void add_agg_noise(pubkey_t *pubkey, ciphertext_t *res, ciphertext_t *ct, int stamp){
+// Adding aggregation noise
+void add_agg_noise(pubkey_t *pubkey, aggkey_t aggkey, ciphertext_t *ct, char *stamp, int stamp_len){
+    mpz_t hash;
+    mpz_t noise;
+    int hash_word_len = mpz_sizeinbase(pubkey->n_squared, 2)/8;
+    unsigned char *hash_val_str = (unsigned char *)malloc(hash_word_len*sizeof(unsigned char));
+    mpz_init(hash);
+    mpz_init(noise);
 
+    // Compute MGF1 hash and scale value to range [0, N^2)
+    PKCS1_MGF1(hash_val_str, hash_word_len, (const unsigned char *) stamp, stamp_len, EVP_sha256());
+    mpz_import(hash, hash_word_len, 1, sizeof(unsigned char), 0, 0, hash_val_str);
+    mpz_mul(hash, hash, pubkey->n_squared);
+    mpz_tdiv_q_2exp(hash, hash, mpz_sizeinbase(pubkey->n_squared, 2));
+
+    // Add aggregation noise to the ciphertext
+    mpz_powm(noise, hash, aggkey, pubkey->n_squared);
+    mpz_mul(ct->c, ct->c, noise);
+    mpz_mod(ct->c, ct->c, pubkey->n_squared);
+
+    free(hash_val_str);
+}
+
+// Copied and modified (to stop EVP_MD_CTX incomplete type error) from OpenSSL library crypto/rsa/rsa_oaep.c
+int PKCS1_MGF1(unsigned char *mask, long len, const unsigned char *seed, long seedlen, const EVP_MD *dgst){
+    long i, outlen = 0;
+    unsigned char cnt[4];
+    EVP_MD_CTX *c;
+    unsigned char md[EVP_MAX_MD_SIZE];
+    int mdlen;
+    int rv = -1;
+
+    c = EVP_MD_CTX_create();
+    EVP_MD_CTX_init(c);
+    mdlen = EVP_MD_size(dgst);
+    if (mdlen < 0){
+        goto err;
+    }
+    for (i = 0; outlen < len; i++){
+        cnt[0] = (unsigned char)((i >> 24) & 255);
+        cnt[1] = (unsigned char)((i >> 16) & 255);
+        cnt[2] = (unsigned char)((i >> 8)) & 255;
+        cnt[3] = (unsigned char)(i & 255);
+        if (!EVP_DigestInit_ex(c,dgst, NULL)
+            || !EVP_DigestUpdate(c, seed, seedlen)
+            || !EVP_DigestUpdate(c, cnt, 4)){
+
+            goto err;
+        }
+        if (outlen + mdlen <= len){
+            if (!EVP_DigestFinal_ex(c, mask + outlen, NULL)){
+                goto err;
+            }
+            outlen += mdlen;
+        } else {
+            if (!EVP_DigestFinal_ex(c, md, NULL)){
+                goto err;
+            }
+            memcpy(mask + outlen, md, len - outlen);
+            outlen = len;
+        }
+    }
+    rv = 0;
+    err:
+    EVP_MD_CTX_destroy(c);
+    return rv;
 }
 
 // 8888888888

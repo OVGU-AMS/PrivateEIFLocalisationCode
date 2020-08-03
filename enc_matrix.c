@@ -187,3 +187,28 @@ void add_c_mtrx_c_mtrx(pubkey_t *pubkey, c_mtrx_t *enc_mat1, c_mtrx_t *enc_mat2,
     return;
 }
 
+//        d8888                            888b    888          d8b
+//       d88888                            8888b   888          Y8P
+//      d88P888                            88888b  888
+//     d88P 888  .d88b.   .d88b.           888Y88b 888  .d88b.  888 .d8888b   .d88b.
+//    d88P  888 d88P"88b d88P"88b          888 Y88b888 d88""88b 888 88K      d8P  Y8b
+//   d88P   888 888  888 888  888          888  Y88888 888  888 888 "Y8888b. 88888888
+//  d8888888888 Y88b 888 Y88b 888 d8b      888   Y8888 Y88..88P 888      X88 Y8b.
+// d88P     888  "Y88888  "Y88888 Y8P      888    Y888  "Y88P"  888  88888P'  "Y8888
+//                   888      888
+//              Y8b d88P Y8b d88P
+//               "Y88P"   "Y88P"
+
+void add_agg_noise_c_mtrx(pubkey_t *pubkey, aggkey_t aggkey, c_mtrx_t *m, int timestamp, int identifier){
+    char stamp[4];
+    stamp[0] = (char) timestamp;
+    stamp[1] = (char) identifier;
+
+    for (int i=0; i<m->size1; i++){
+        for (int j=0; j<m->size2; j++){
+            stamp[2] = (char) i;
+            stamp[3] = (char) j;
+            add_agg_noise(pubkey, aggkey, m->data[i][j], stamp, 4);
+        }
+    }
+}
