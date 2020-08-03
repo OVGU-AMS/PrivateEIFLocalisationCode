@@ -21,7 +21,7 @@ void nav_input_err_check(int val, int expected, char *msg);
 
 void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int num_sensors){
     // track file var
-    FILE *track_fp;
+    FILE *track_fp, *output_fp;
     char f_name[100];
 
     // Sending encrypted state vars
@@ -29,18 +29,18 @@ void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int num_sensors){
     ciphertext_t *state_enc;
 
     // Vars for sensor encryptions
-    c_mtrx_t **hrhs;
-    c_mtrx_t **hrzs;
-    c_mtrx_t *hrh_sum;
-    c_mtrx_t *hrz_sum;
+    c_mtrx_t **enc_hrhs;
+    c_mtrx_t **enc_hrzs;
+    c_mtrx_t *enc_hrh_sum;
+    c_mtrx_t *enc_hrz_sum;
 
     // Receiving vars
     char **hrh_enc_strs;
     char **hrz_enc_strs;
     MPI_Request *hrh_requests;
     MPI_Request *hrz_requests;
-    int *received_hrh;
-    int *received_hrz;
+    int *hrh_received_flags;
+    int *hrz_received_flags;
     int first_received_hrh;
     int first_received_hrz;
     int test_request;
@@ -56,27 +56,37 @@ void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int num_sensors){
     gsl_matrix *covariance;
     gsl_vector *info_vec;
     gsl_matrix *info_mat;
-    gsl_vector *sen_hrz_sum;
-    gsl_matrix *sen_hrh_sum;
+    gsl_vector *hrz_sum;
+    gsl_matrix *hrh_sum;
+    gsl_vector *tmp_pred_vec;
+    gsl_matrix *tmp_pred_mat;
     gsl_permutation *perm;
     int sig_num;
 
-    // 8888888                            888
-    //   888                              888
-    //   888                              888
-    //   888   88888b.  88888b.  888  888 888888
-    //   888   888 "88b 888 "88b 888  888 888
-    //   888   888  888 888  888 888  888 888
-    //   888   888  888 888 d88P Y88b 888 Y88b.
-    // 8888888 888  888 88888P"   "Y88888  "Y888
-    //                  888
-    //                  888
-    //                  888
+    // 8888888 .d88888b.
+    //   888  d88P" "Y88b
+    //   888  888     888
+    //   888  888     888
+    //   888  888     888
+    //   888  888     888
+    //   888  Y88b. .d88P
+    // 8888888 "Y88888P"
+
+
+
 
     // Open track file for filter init - TODO currently setup for debugging input only!
     sprintf(f_name, "input/debug_track1.txt");
     track_fp = fopen(f_name, "r");
     if (track_fp == NULL){
+        fprintf(stderr, "Could not open track file!\n");
+        MPI_Abort(MPI_COMM_WORLD, 1);
+    }
+
+    // output - TODO currently setup for debugging input only!
+    sprintf(f_name, "output/debug_nav1.txt");
+    output_fp = fopen(f_name, "w");
+    if (output_fp == NULL){
         fprintf(stderr, "Could not open track file!\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
@@ -122,16 +132,16 @@ void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int num_sensors){
     state_enc = init_ciphertext();
 
     // Allocate memory for recieved encrypted matrices
-    hrhs = (c_mtrx_t **)malloc(num_sensors*sizeof(c_mtrx_t *));
-    hrzs = (c_mtrx_t **)malloc(num_sensors*sizeof(c_mtrx_t *));
+    enc_hrhs = (c_mtrx_t **)malloc(num_sensors*sizeof(c_mtrx_t *));
+    enc_hrzs = (c_mtrx_t **)malloc(num_sensors*sizeof(c_mtrx_t *));
     for (int s=0; s<num_sensors; s++){
-        hrhs[s] = c_mtrx_alloc(dimension, dimension);
-        hrzs[s] = c_mtrx_alloc(1, dimension);
+        enc_hrhs[s] = c_mtrx_alloc(dimension, dimension);
+        enc_hrzs[s] = c_mtrx_alloc(1, dimension);
     }
-    hrh_sum = c_mtrx_alloc(dimension, dimension);
-    hrz_sum = c_mtrx_alloc(1, dimension);
-    init_c_mtrx(hrh_sum);
-    init_c_mtrx(hrz_sum);
+    enc_hrh_sum = c_mtrx_alloc(dimension, dimension);
+    enc_hrz_sum = c_mtrx_alloc(1, dimension);
+    init_c_mtrx(enc_hrh_sum);
+    init_c_mtrx(enc_hrz_sum);
 
     // Allocate memory for recieving serialised encrypted matrices
     hrh_requests = (MPI_Request *)malloc(num_sensors*sizeof(MPI_Request));
@@ -142,8 +152,8 @@ void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int num_sensors){
         hrh_enc_strs[s] = (char *)malloc(dimension*dimension*MAX_ENC_SERIALISATION_CHARS*sizeof(char));
         hrz_enc_strs[s] = (char *)malloc(dimension*MAX_ENC_SERIALISATION_CHARS*sizeof(char));
     }
-    received_hrh = (int *)malloc(num_sensors*sizeof(int));
-    received_hrz = (int *)malloc(num_sensors*sizeof(int));
+    hrh_received_flags = (int *)malloc(num_sensors*sizeof(int));
+    hrz_received_flags = (int *)malloc(num_sensors*sizeof(int));
 
     // Allocate for state and covariance which will be read from file
     // state and covariance allocated above for file input
@@ -152,8 +162,10 @@ void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int num_sensors){
     F = gsl_matrix_alloc(dimension, dimension);
     Q = gsl_matrix_alloc(dimension, dimension);
     perm = gsl_permutation_alloc(dimension);
-    sen_hrh_sum = gsl_matrix_alloc(dimension, dimension);
-    sen_hrz_sum = gsl_vector_alloc(dimension);
+    hrh_sum = gsl_matrix_alloc(dimension, dimension);
+    hrz_sum = gsl_vector_alloc(dimension);
+    tmp_pred_vec = gsl_vector_alloc(dimension);
+    tmp_pred_mat = gsl_matrix_alloc(dimension, dimension);
     init_filter_model(F, Q);
 
     //  .d8888b.  d8b
@@ -172,13 +184,13 @@ void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int num_sensors){
     MPI_Barrier(MPI_COMM_WORLD);
     
     // Begin tracking
-    //time_steps = 2; // TODO TEMP
     for(int t=0; t<time_steps; t++){
 
         // Filter prediction step
-        gsl_blas_dgemv(CblasNoTrans, 1.0, F, state, 0.0, state);
-        gsl_blas_dsymm(CblasRight, CblasUpper, 1.0, covariance, F, 0.0, covariance);
-        gsl_blas_dgemm(CblasNoTrans, CblasTrans, 1.0, covariance, F, 0.0, covariance);
+        gsl_blas_dgemv(CblasNoTrans, 1.0, F, state, 0.0, tmp_pred_vec);
+        gsl_blas_dcopy(tmp_pred_vec, state);
+        gsl_blas_dsymm(CblasRight, CblasUpper, 1.0, covariance, F, 0.0, tmp_pred_mat);
+        gsl_blas_dgemm(CblasNoTrans, CblasTrans, 1.0, tmp_pred_mat, F, 0.0, covariance);
         gsl_matrix_add(covariance, Q);
 
         // Encrypt and broadcast the state variables
@@ -191,44 +203,44 @@ void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int num_sensors){
         }
 
         // Construct the hrh and hrz sum matrices as the sensor matrices arrive in order of arrival/poll
-        reset_recieved_flags(received_hrh, num_sensors);
-        reset_recieved_flags(received_hrz, num_sensors);
+        reset_recieved_flags(hrh_received_flags, num_sensors);
+        reset_recieved_flags(hrz_received_flags, num_sensors);
         first_received_hrh = 0;
         first_received_hrz = 0;
         // Keep looping sensors until all received
-        while (!are_all_received(received_hrh, num_sensors) || !are_all_received(received_hrz, num_sensors)){
+        while (!are_all_received(hrh_received_flags, num_sensors) || !are_all_received(hrz_received_flags, num_sensors)){
             for (int s=0; s<num_sensors; s++){
 
                 // For each sensor where hrh not yet received from, poll the receive request
-                if (!received_hrh[s]){
+                if (!hrh_received_flags[s]){
                     MPI_Test(hrh_requests+s, &test_request, MPI_STATUS_IGNORE);
                     if (test_request){
-                        received_hrh[s] = 1;
-                        get_c_mtrx_from_enc_str(hrhs[s], dimension, dimension, hrh_enc_strs[s]);
+                        hrh_received_flags[s] = 1;
+                        get_c_mtrx_from_enc_str(enc_hrhs[s], dimension, dimension, hrh_enc_strs[s]);
                         // If it's the first sensor to send initialise the sum with it's matrix
                         if (!first_received_hrh){
                             first_received_hrh = 1;
-                            copy_matrix(hrh_sum, hrhs[s], dimension, dimension);
+                            copy_matrix(enc_hrh_sum, enc_hrhs[s], dimension, dimension);
                         // Otherwise add to the sum
                         } else {
-                            add_c_mtrx_c_mtrx(pubkey, hrhs[s], hrh_sum, hrh_sum);
+                            add_c_mtrx_c_mtrx(pubkey, enc_hrhs[s], enc_hrh_sum, enc_hrh_sum);
                         }
                     }
                 }
 
                 // For each sensor where hrz not yet received from, poll the receive request
-                if (!received_hrz[s]){
+                if (!hrz_received_flags[s]){
                     MPI_Test(hrz_requests+s, &test_request, MPI_STATUS_IGNORE);
                     if (test_request){
-                        received_hrz[s] = 1;
-                        get_c_mtrx_from_enc_str(hrzs[s], 1, dimension, hrz_enc_strs[s]);
+                        hrz_received_flags[s] = 1;
+                        get_c_mtrx_from_enc_str(enc_hrzs[s], 1, dimension, hrz_enc_strs[s]);
                         // If it's the first sensor to send initialise the sum with it's matrix
                         if (!first_received_hrz){
                             first_received_hrz = 1;
-                            copy_matrix(hrz_sum, hrzs[s], 1, dimension);
+                            copy_matrix(enc_hrz_sum, enc_hrzs[s], 1, dimension);
                         // Otherwise add to the sum
                         } else {
-                            add_c_mtrx_c_mtrx(pubkey, hrzs[s], hrz_sum, hrz_sum);
+                            add_c_mtrx_c_mtrx(pubkey, enc_hrzs[s], enc_hrz_sum, enc_hrz_sum);
                         }
                     }
                 }
@@ -238,30 +250,30 @@ void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int num_sensors){
 
         // TEMP
         // for (int s=0; s<num_sensors; s++){
-        //     decrypt_mtrx(pubkey, prvkey, hrhs[s], covariance, 1);
+        //     decrypt_mtrx(pubkey, prvkey, enc_hrhs[s], covariance, 1);
         //     printf("Matrix from %d:\n", s+1);
         //     print_gsl_matrix(covariance, dimension, dimension);
 
-        //     decrypt_vctr(pubkey, prvkey, hrzs[s], state, 1);
+        //     decrypt_vctr(pubkey, prvkey, enc_hrzs[s], state, 1);
         //     printf("Vector from %d:\n", s+1);
         //     print_gsl_vector(state, dimension);
         // }
 
         // Decrypt the summed sensor matrices and vectors
-        decrypt_mtrx(pubkey, prvkey, hrh_sum, sen_hrh_sum, 1);
-        decrypt_vctr(pubkey, prvkey, hrz_sum, sen_hrz_sum, 1);
+        decrypt_mtrx(pubkey, prvkey, enc_hrh_sum, hrh_sum, 1);
+        decrypt_vctr(pubkey, prvkey, enc_hrz_sum, hrz_sum, 1);
         // printf("Matrix sum:\n");
-        // print_gsl_matrix(sen_hrh_sum, dimension, dimension);
+        // print_gsl_matrix(hrh_sum, dimension, dimension);
         // printf("Vector sum:\n");
-        // print_gsl_vector(sen_hrz_sum, dimension);
+        // print_gsl_vector(hrz_sum, dimension);
 
         // Filter update step, convert to information filter form then back
         gsl_linalg_LU_decomp(covariance, perm, &sig_num);
         gsl_linalg_LU_invert(covariance, perm, info_mat);
         gsl_blas_dsymv(CblasUpper, 1.0, info_mat, state, 0.0, info_vec);
 
-        gsl_vector_add(info_vec, sen_hrz_sum);
-        gsl_matrix_add(info_mat, sen_hrh_sum);
+        gsl_vector_add(info_vec, hrz_sum);
+        gsl_matrix_add(info_mat, hrh_sum);
 
         gsl_linalg_LU_decomp(info_mat, perm, &sig_num);
         gsl_linalg_LU_invert(info_mat, perm, covariance);
@@ -272,6 +284,12 @@ void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int num_sensors){
         print_gsl_vector(state, dimension);
         printf("Covariance:\n");
         print_gsl_matrix(covariance, dimension, dimension);
+        fprintf(output_fp, "%lf %lf %lf %lf\n", gsl_vector_get(state, 0), gsl_vector_get(state, 1), gsl_vector_get(state, 2), gsl_vector_get(state, 3));
+        fprintf(output_fp, "%lf %lf %lf %lf\n", gsl_matrix_get(covariance, 0, 0), gsl_matrix_get(covariance, 0, 1), gsl_matrix_get(covariance, 0, 2), gsl_matrix_get(covariance, 0, 3));
+        fprintf(output_fp, "%lf %lf %lf %lf\n", gsl_matrix_get(covariance, 1, 0), gsl_matrix_get(covariance, 1, 1), gsl_matrix_get(covariance, 1, 2), gsl_matrix_get(covariance, 1, 3));
+        fprintf(output_fp, "%lf %lf %lf %lf\n", gsl_matrix_get(covariance, 2, 0), gsl_matrix_get(covariance, 2, 1), gsl_matrix_get(covariance, 2, 2), gsl_matrix_get(covariance, 2, 3));
+        fprintf(output_fp, "%lf %lf %lf %lf\n", gsl_matrix_get(covariance, 3, 0), gsl_matrix_get(covariance, 3, 1), gsl_matrix_get(covariance, 3, 2), gsl_matrix_get(covariance, 3, 3));
+
 
     }
 
@@ -289,8 +307,10 @@ void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int num_sensors){
 
     // Free filter vars
     gsl_permutation_free(perm);
-    gsl_matrix_free(sen_hrh_sum);
-    gsl_vector_free(sen_hrz_sum);
+    gsl_matrix_free(tmp_pred_mat);
+    gsl_vector_free(tmp_pred_vec);
+    gsl_matrix_free(hrh_sum);
+    gsl_vector_free(hrz_sum);
     gsl_matrix_free(Q);
     gsl_matrix_free(F);
     gsl_matrix_free(info_mat);
@@ -299,8 +319,8 @@ void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int num_sensors){
     gsl_vector_free(state);
 
     // Free receiving vars
-    free(received_hrh);
-    free(received_hrz);
+    free(hrh_received_flags);
+    free(hrz_received_flags);
     for (int s=0; s<num_sensors; s++){
         free(hrh_enc_strs[s]);
         free(hrz_enc_strs[s]);
@@ -311,15 +331,18 @@ void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int num_sensors){
     free(hrz_requests);
 
     // Free encrypted storage vars
-    c_mtrx_free(hrh_sum);
-    c_mtrx_free(hrz_sum);
+    c_mtrx_free(enc_hrh_sum);
+    c_mtrx_free(enc_hrz_sum);
     for (int s=0; s<num_sensors; s++){
-        c_mtrx_free(hrhs[s]);
-        c_mtrx_free(hrzs[s]);
+        c_mtrx_free(enc_hrhs[s]);
+        c_mtrx_free(enc_hrzs[s]);
     }
-    free(hrhs);
-    free(hrzs);
+    free(enc_hrhs);
+    free(enc_hrzs);
     free_ciphertext(state_enc);
+
+
+    fclose(output_fp);
     
 }
 
