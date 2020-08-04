@@ -10,8 +10,17 @@ void init_filter_model(gsl_matrix *F, gsl_matrix *Q);
 void broadcast_all_enc_state_vars(pubkey_t *pubkey, ciphertext_t *ct, char *enc_str, gsl_vector *state);
 void broadcast_enc_state_var(pubkey_t *pubkey, ciphertext_t *ct, char *enc_str, double val);
 void get_enc_str_from_sensor(int src_sensor, int rows, int cols, char *enc_strs, int send_tag, MPI_Request *r);
-void reset_recieved_flags(int *received_flags, int num_sensors);
+void reset_recieved_flags(int *received_flags, int num_sensors, int *first_received);
 int are_all_received(int *received_flags, int num_sensors);
+void poll_sensor_and_aggregate(pubkey_t *pubkey, 
+                                int *received_flag, 
+                                int *first_received_flag,
+                                MPI_Request *request,
+                                int dim1, 
+                                int dim2, 
+                                char *enc_mat_str,
+                                c_mtrx_t *enc_mat,
+                                c_mtrx_t *enc_mat_sum);
 void get_c_mtrx_from_enc_str(c_mtrx_t *m, int rows, int cols, char *enc_strs);
 void copy_matrix(c_mtrx_t *to_copy_to, c_mtrx_t *to_copy_from, int rows, int cols);
 void print_gsl_vector(gsl_vector *v, int d);
@@ -43,7 +52,6 @@ void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int num_sensors){
     int *hrz_received_flags;
     int first_received_hrh;
     int first_received_hrz;
-    int test_request;
 
     // Sim vars
     int time_steps;
@@ -202,62 +210,35 @@ void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int num_sensors){
             get_enc_str_from_sensor(s+1, 1, dimension, hrz_enc_strs[s], 1, hrz_requests+s);
         }
 
-        // Construct the hrh and hrz sum matrices as the sensor matrices arrive in order of arrival/poll
-        reset_recieved_flags(hrh_received_flags, num_sensors);
-        reset_recieved_flags(hrz_received_flags, num_sensors);
-        first_received_hrh = 0;
-        first_received_hrz = 0;
-        // Keep looping sensors until all received
+        // Construct the hrh and hrz sum matrices as the sensor matrices arrive, in order of arrival/poll
+        reset_recieved_flags(hrh_received_flags, num_sensors, &first_received_hrh);
+        reset_recieved_flags(hrz_received_flags, num_sensors, &first_received_hrz);
+
         while (!are_all_received(hrh_received_flags, num_sensors) || !are_all_received(hrz_received_flags, num_sensors)){
             for (int s=0; s<num_sensors; s++){
 
-                // For each sensor where hrh not yet received from, poll the receive request
-                if (!hrh_received_flags[s]){
-                    MPI_Test(hrh_requests+s, &test_request, MPI_STATUS_IGNORE);
-                    if (test_request){
-                        hrh_received_flags[s] = 1;
-                        get_c_mtrx_from_enc_str(enc_hrhs[s], dimension, dimension, hrh_enc_strs[s]);
-                        // If it's the first sensor to send initialise the sum with it's matrix
-                        if (!first_received_hrh){
-                            first_received_hrh = 1;
-                            copy_matrix(enc_hrh_sum, enc_hrhs[s], dimension, dimension);
-                        // Otherwise add to the sum
-                        } else {
-                            add_c_mtrx_c_mtrx(pubkey, enc_hrhs[s], enc_hrh_sum, enc_hrh_sum);
-                        }
-                    }
-                }
+                // Keep polling and aggregating until all received
+                poll_sensor_and_aggregate(pubkey, 
+                                hrh_received_flags+s, 
+                                &first_received_hrh, 
+                                hrh_requests+s,
+                                dimension, 
+                                dimension, 
+                                hrh_enc_strs[s],
+                                enc_hrhs[s],
+                                enc_hrh_sum);
 
-                // For each sensor where hrz not yet received from, poll the receive request
-                if (!hrz_received_flags[s]){
-                    MPI_Test(hrz_requests+s, &test_request, MPI_STATUS_IGNORE);
-                    if (test_request){
-                        hrz_received_flags[s] = 1;
-                        get_c_mtrx_from_enc_str(enc_hrzs[s], 1, dimension, hrz_enc_strs[s]);
-                        // If it's the first sensor to send initialise the sum with it's matrix
-                        if (!first_received_hrz){
-                            first_received_hrz = 1;
-                            copy_matrix(enc_hrz_sum, enc_hrzs[s], 1, dimension);
-                        // Otherwise add to the sum
-                        } else {
-                            add_c_mtrx_c_mtrx(pubkey, enc_hrzs[s], enc_hrz_sum, enc_hrz_sum);
-                        }
-                    }
-                }
+                poll_sensor_and_aggregate(pubkey, 
+                                hrz_received_flags+s, 
+                                &first_received_hrz, 
+                                hrz_requests+s,
+                                1, 
+                                dimension,
+                                hrz_enc_strs[s],
+                                enc_hrzs[s],
+                                enc_hrz_sum);
             }
         }
-
-
-        // TEMP
-        // for (int s=0; s<num_sensors; s++){
-        //     decrypt_mtrx(pubkey, prvkey, enc_hrhs[s], covariance, 1);
-        //     printf("Matrix from %d:\n", s+1);
-        //     print_gsl_matrix(covariance, dimension, dimension);
-
-        //     decrypt_vctr(pubkey, prvkey, enc_hrzs[s], state, 1);
-        //     printf("Vector from %d:\n", s+1);
-        //     print_gsl_vector(state, dimension);
-        // }
 
         // Decrypt the summed sensor matrices and vectors
         decrypt_mtrx(pubkey, prvkey, enc_hrh_sum, hrh_sum, 1);
@@ -280,6 +261,7 @@ void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int num_sensors){
         gsl_blas_dsymv(CblasUpper, 1.0, covariance, info_vec, 0.0, state);
 
         // Output estimated location
+        printf("time: %d\n", t);
         printf("State:\n");
         print_gsl_vector(state, dimension);
         printf("Covariance:\n");
@@ -289,7 +271,6 @@ void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int num_sensors){
         fprintf(output_fp, "%lf %lf %lf %lf\n", gsl_matrix_get(covariance, 1, 0), gsl_matrix_get(covariance, 1, 1), gsl_matrix_get(covariance, 1, 2), gsl_matrix_get(covariance, 1, 3));
         fprintf(output_fp, "%lf %lf %lf %lf\n", gsl_matrix_get(covariance, 2, 0), gsl_matrix_get(covariance, 2, 1), gsl_matrix_get(covariance, 2, 2), gsl_matrix_get(covariance, 2, 3));
         fprintf(output_fp, "%lf %lf %lf %lf\n", gsl_matrix_get(covariance, 3, 0), gsl_matrix_get(covariance, 3, 1), gsl_matrix_get(covariance, 3, 2), gsl_matrix_get(covariance, 3, 3));
-
 
     }
 
@@ -303,7 +284,8 @@ void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int num_sensors){
     // 888       888  "Y8888  888  888  888 Y8P      888     888     "Y8888   "Y8888
 
 
-
+    // Close output file
+    fclose(output_fp);
 
     // Free filter vars
     gsl_permutation_free(perm);
@@ -340,10 +322,6 @@ void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int num_sensors){
     free(enc_hrhs);
     free(enc_hrzs);
     free_ciphertext(state_enc);
-
-
-    fclose(output_fp);
-    
 }
 
 // Initialise values for process model matrices F and Q
@@ -425,10 +403,11 @@ void get_enc_str_from_sensor(int src_sensor, int rows, int cols, char *enc_strs,
 }
 
 // Set all received flags to 0
-void reset_recieved_flags(int *received_flags, int num_sensors){
+void reset_recieved_flags(int *received_flags, int num_sensors, int *first_received){
     for (int s=0; s<num_sensors; s++){
         received_flags[s] = 0;
     }
+    *first_received = 0;
 }
 
 // Check if all received flags are true
@@ -441,6 +420,37 @@ int are_all_received(int *received_flags, int num_sensors){
         return 1;
     } else {
         return 0;
+    }
+}
+
+void poll_sensor_and_aggregate(pubkey_t *pubkey, 
+                                int *received_flag, 
+                                int *first_received_flag,
+                                MPI_Request *request,
+                                int dim1, 
+                                int dim2, 
+                                char *enc_mat_str,
+                                c_mtrx_t *enc_mat,
+                                c_mtrx_t *enc_mat_sum){
+    
+    // If matrix not yet received from request, poll the receive request again
+    int test_request;
+    if (!*received_flag){
+        MPI_Test(request, &test_request, MPI_STATUS_IGNORE);
+        if (test_request){
+            *received_flag = 1;
+            get_c_mtrx_from_enc_str(enc_mat, dim1, dim2, enc_mat_str);
+
+            // If it's the first sensor to send initialise the sum with it's matrix
+            if (!*first_received_flag){
+                *first_received_flag = 1;
+                copy_matrix(enc_mat_sum, enc_mat, dim1, dim2);
+            
+            // Otherwise add to the sum
+            } else {
+                add_c_mtrx_c_mtrx(pubkey, enc_mat, enc_mat_sum, enc_mat_sum);
+            }
+        }
     }
 }
 

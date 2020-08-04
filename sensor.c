@@ -294,7 +294,9 @@ void run_sensor(int id){
 
 
 
-    // Done with repeated sends, free the reused request structs
+    // Done with repeated sends, wait for last ones to end then free request structs
+    MPI_Wait(&hrh_request, MPI_STATUS_IGNORE);
+    MPI_Wait(&hrz_request, MPI_STATUS_IGNORE);
     MPI_Request_free(&hrh_request);
     MPI_Request_free(&hrz_request);
 
