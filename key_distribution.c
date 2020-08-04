@@ -10,10 +10,9 @@ void dist_phe_key(int num_sensors, pubkey_t *pubkey){
     // Serialize key, note character buffer len +1 for null termination
     char key[MAX_KEY_SERIALISATION_CHARS];
     serialise_pubkey(pubkey, key);
-    int key_len = strlen(key)+1;
 
     // Send key to all
-    MPI_Bcast(key, key_len, MPI_CHAR, 0, MPI_COMM_WORLD);
+    MPI_Bcast(key, MAX_KEY_SERIALISATION_CHARS, MPI_CHAR, 0, MPI_COMM_WORLD);
 }
 
 // Generating and distributing aggregation private keys (starting from process index 1)

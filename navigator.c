@@ -423,6 +423,7 @@ int are_all_received(int *received_flags, int num_sensors){
     }
 }
 
+// Checking and adding encryptions to information filter sums
 void poll_sensor_and_aggregate(pubkey_t *pubkey, 
                                 int *received_flag, 
                                 int *first_received_flag,

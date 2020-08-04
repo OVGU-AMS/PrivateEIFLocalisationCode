@@ -52,6 +52,9 @@ void encode_from_dbl(mpz_t res, double x, unsigned int mults, unsigned int mod_b
 
     mpz_set_f(res, scaled_x);
 
+    // res should always be less than mx_enc anyway (otherwise it's an encoding overflow)
+    mpz_mod(res, res, mx_enc);
+
     if (sign){
         mpz_sub(res, mx_enc, res);
     }

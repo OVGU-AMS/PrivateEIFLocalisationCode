@@ -12,10 +12,12 @@
 #include <openssl/evp.h>
 #include "encoding.h"
 
-#define PAILLIER_BITSIZE 1024
+#define PAILLIER_BITSIZE 2048
+// Do not change serialisation base, Paillier library has this hardcoded -.-
 #define SERIALISATION_BASE 16
-#define MAX_KEY_SERIALISATION_CHARS 1024
-#define MAX_ENC_SERIALISATION_CHARS 1024
+// N^2 in base above, plus 1 for null termination
+#define MAX_KEY_SERIALISATION_CHARS 1025
+#define MAX_ENC_SERIALISATION_CHARS 1025
 
 typedef struct pubkeyTag pubkey_t;
 typedef struct prvkeyTag prvkey_t;
