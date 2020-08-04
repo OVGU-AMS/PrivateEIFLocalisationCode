@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include <mpi.h>
 #include "encoded_paillier_agg.h"
 #include "key_distribution.h"
@@ -21,6 +22,7 @@ int main(int argc, char *argv[]){
     int num_procs;
     int num_sensors;
     int proc_id;
+    clock_t start_time, end_time;
 
     // Init multi processing
     mpi_err = MPI_Init(&argc, &argv);
@@ -62,9 +64,14 @@ int main(int argc, char *argv[]){
         // Free aggregation key string buffers
         free(aggkey_strs);
 
+        start_time = clock();
+
         // Run navigator
         run_navigator(pubkey, prvkey, num_sensors);
         fprintf(stderr, "Navigator finished.\n");
+
+        end_time = clock();
+        printf("Navigation ended in %lf seconds\n", (end_time-start_time)/1000000.0);
 
         // Ensure all aggregation keys were sent and free array
         for (int s=0; s<num_sensors; s++){
