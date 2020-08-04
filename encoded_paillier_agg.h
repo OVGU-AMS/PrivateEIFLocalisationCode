@@ -12,7 +12,7 @@
 #include <openssl/evp.h>
 #include "encoding.h"
 
-#define PAILLIER_BITSIZE 2048
+#define PAILLIER_BITSIZE 1024
 // Do not change serialisation base, Paillier library has this hardcoded -.-
 #define SERIALISATION_BASE 16
 // N^2 in base above, plus 1 for null termination

@@ -10,8 +10,8 @@
 
 // Defaults for encoding
 
-#define MOD_BITS 256
-#define FRAC_BITS 64
+#define MOD_BITS 128
+#define FRAC_BITS 32
 
 // Encoding for Paillier with single multiplication (assumes mpz already initialised)
 
