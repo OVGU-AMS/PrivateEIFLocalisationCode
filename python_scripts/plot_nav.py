@@ -34,8 +34,8 @@ def plot_debug_track():
     states = []
     covariances = []
 
-    with open("../input/debug_track1.txt") as in_f:
-        with open("../output/debug_nav1.txt") as out_f:
+    with open("../input/track1.txt") as in_f:
+        with open("../output/encoding_nav001.txt") as out_f:
             t = int(in_f.readline())
             dim = int(in_f.readline())
             init_state = np.array([float(x) for x in in_f.readline().split()])
