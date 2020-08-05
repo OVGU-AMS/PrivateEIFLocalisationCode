@@ -64,6 +64,25 @@ def plot_debug_track():
                                         np.array([state[0],state[2]]), 
                                         2, fill=False, linestyle='-', edgecolor='royalblue', zorder=1))
 
+
+    SENSOR_LOCATIONS = [np.array([5.0, 5.0]), # Normal
+                        np.array([40.0, 5.0]), 
+                        np.array([5.0, 40.0]), 
+                        np.array([40.0, 40.0]),
+                        np.array([-30.0, -30.0]), # Big
+                        np.array([75.0, -30.0]), 
+                        np.array([-30.0, 75.0]), 
+                        np.array([75.0, 75.0]),
+                        np.array([-65.0, -65.0]), # Very big 
+                        np.array([110.0, -65.0]), 
+                        np.array([-65.0, 110.0]), 
+                        np.array([110.0, 110.0]),
+                        np.array([22.0, 22.0]), # Small
+                        np.array([23.0, 22.0]), 
+                        np.array([22.0, 23.0]), 
+                        np.array([23.0, 23.0])]
+    ax.scatter([x[0] for x in SENSOR_LOCATIONS], [x[1] for x in SENSOR_LOCATIONS], marker='o', color='red')
+
     # display the picture
     plt.show()
 
