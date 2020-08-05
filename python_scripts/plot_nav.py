@@ -34,14 +34,14 @@ def plot_debug_track():
     states = []
     covariances = []
 
-    with open("input/debug_track1.txt") as in_f:
-        with open("output/debug_nav1.txt") as out_f:
+    with open("../input/debug_track1.txt") as in_f:
+        with open("../output/debug_nav1.txt") as out_f:
             t = int(in_f.readline())
             dim = int(in_f.readline())
             init_state = np.array([float(x) for x in in_f.readline().split()])
             init_cov = np.array([[float(x) for x in in_f.readline().split()] for _ in range(dim)])
 
-            for t_step in range(t):
+            for _ in range(t):
                 gts.append(np.array([float(x) for x in in_f.readline().split()]))
                 states.append(np.array([float(x) for x in out_f.readline().split()]))
                 covariances.append(np.array([[float(x) for x in out_f.readline().split()] for _ in range(dim)]))

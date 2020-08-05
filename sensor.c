@@ -28,7 +28,7 @@ void sensor_input_err_check(int val, int expected, char *msg, int id);
 
 
 // The sensor
-void run_sensor(int id){
+void run_sensor(int id, char *sensor_filepath_base){
     // Key vars
     char key_str[MAX_KEY_SERIALISATION_CHARS];
     pubkey_t *pubkey;
@@ -87,11 +87,11 @@ void run_sensor(int id){
     deserialise_aggkey(agg_key, key_str);
     //gmp_printf("id: %d, agg key: %Zd\n", id, agg_key);
 
-    // Open sensor measurements file - TODO currently setup for debugging input only!
-    sprintf(f_name, "input/debug_sensor%d.txt", id);
+    // Open sensor measurements file
+    sprintf(f_name, sensor_filepath_base, id);
     measurements_fp = fopen(f_name, "r");
     if (measurements_fp == NULL){
-        fprintf(stderr, "%d Could not open measurement file!\n", id);
+        fprintf(stderr, "%d Could not open measurement file \"%s\"!\n", id, f_name);
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 

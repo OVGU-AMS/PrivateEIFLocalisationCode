@@ -22,6 +22,9 @@ int main(int argc, char *argv[]){
     int num_procs;
     int num_sensors;
     int proc_id;
+    char *track_filepath;
+    char *output_filepath;
+    char *sensor_filepath_base;
     clock_t start_time, end_time;
 
     // Init multi processing
@@ -42,6 +45,15 @@ int main(int argc, char *argv[]){
         aggkey_t *aggkeys = (aggkey_t*)malloc(num_sensors*sizeof(aggkey_t));
         char *aggkey_strs = (char *)malloc(num_sensors*MAX_KEY_SERIALISATION_CHARS*sizeof(char));
         MPI_Request *agg_requests = (MPI_Request *)malloc(num_sensors*sizeof(MPI_Request));
+
+        // Get track filepath
+        if (argc == 1){
+            track_filepath = "input/debug_track1.txt";
+            output_filepath = "output/debug_nav1.txt";
+        } else{
+            track_filepath = argv[1];
+            output_filepath = argv[2];
+        }
 
         // Generate Paillier keys
         key_gen(PAILLIER_BITSIZE, &pubkey, &prvkey);
@@ -67,7 +79,7 @@ int main(int argc, char *argv[]){
         start_time = clock();
 
         // Run navigator
-        run_navigator(pubkey, prvkey, num_sensors);
+        run_navigator(pubkey, prvkey, num_sensors, track_filepath, output_filepath);
         fprintf(stderr, "Navigator finished.\n");
 
         end_time = clock();
@@ -85,7 +97,15 @@ int main(int argc, char *argv[]){
 
     // Remaining processes are the sensors
     } else {
-        run_sensor(proc_id);
+
+        // Get sensor measurements filepath
+        if (argc <= 3){
+            sensor_filepath_base = "input/debug_sensor%d.txt";
+        } else {
+            sensor_filepath_base = argv[3];
+        }
+
+        run_sensor(proc_id, sensor_filepath_base);
         fprintf(stderr, "Sensor %d finished.\n", proc_id);
     }
 

@@ -28,10 +28,9 @@ void print_gsl_matrix(gsl_matrix *m, int r, int c);
 void nav_input_err_check(int val, int expected, char *msg);
 
 
-void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int num_sensors){
+void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int num_sensors, char *track_filename, char *output_filepath){
     // track file var
     FILE *track_fp, *output_fp;
-    char f_name[100];
 
     // Sending encrypted state vars
     char enc_str[MAX_KEY_SERIALISATION_CHARS];
@@ -83,19 +82,17 @@ void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int num_sensors){
 
 
 
-    // Open track file for filter init - TODO currently setup for debugging input only!
-    sprintf(f_name, "input/debug_track1.txt");
-    track_fp = fopen(f_name, "r");
+    // Open track file for filter init
+    track_fp = fopen(track_filename, "r");
     if (track_fp == NULL){
-        fprintf(stderr, "Could not open track file!\n");
+        fprintf(stderr, "Could not open track file \"%s\"!\n", track_filename);
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
-    // output - TODO currently setup for debugging input only!
-    sprintf(f_name, "output/debug_nav1.txt");
-    output_fp = fopen(f_name, "w");
+    // output
+    output_fp = fopen(output_filepath, "w");
     if (output_fp == NULL){
-        fprintf(stderr, "Could not open track file!\n");
+        fprintf(stderr, "Could not open output file \"%s\"!\n", output_filepath);
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
