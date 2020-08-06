@@ -21,7 +21,6 @@ NUM_SIMULATIONS_DEFAULT = 6
 def run_simulation_repeats(track_filepath, sensor_filepath_base, output_filepath_base, runtimes_filepath, num_sensors, paillier_bitsize, encoding_mod_bitsize, encoding_frac_bitsize, num_simulations):
 	cwd = '../'
 	runtimes = []
-	processes = []
 	for i in range(1, num_simulations+1):
 		# Filepath commanline args for the simulation
 		track_fp = track_filepath
@@ -34,17 +33,15 @@ def run_simulation_repeats(track_filepath, sensor_filepath_base, output_filepath
 
 		# Run simulation
 		# shell=False (do not use the the shell -> no piping, redirecting, etc, but much faster)
-		processes.append( subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False, cwd=cwd) )
+		p = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False, cwd=cwd)
 
-	# Wait for async processes to finish (synchronously but will still be faster) and get runtime from program stdout
-	for i in range(1, num_simulations+1):
-		stdout, stderr = processes[i-1].communicate(None)
+		# Get runtime from program stdout
 		try:
-			runtimes.append(float(stdout))
+			runtimes.append(float(p.stdout))
 		except:
 			print("Failed to convert output to float!")
 
-		print('stdout from sim %d:' % i, stdout)
+		print('stdout:', p.stdout)
 
 	# Write all simulation runtimes to time_output file
 	with open(cwd+runtimes_filepath, 'w') as runtimes_f:
