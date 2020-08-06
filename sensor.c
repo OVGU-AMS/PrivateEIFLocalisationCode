@@ -83,12 +83,12 @@ void run_sensor(int id, char *sensor_filepath_base, encoding_params_t *encoding_
     // Get Paillier public key
     MPI_Bcast(key_str, serialisation_params->paillier_max_key_serialisation_chars, MPI_CHAR, 0, MPI_COMM_WORLD);
     pubkey = deserialise_pubkey(key_str);
-    //printf("id: %d, key: %s\n", id, key_str);
+    //fprintf(stderr, "id: %d, key: %s\n", id, key_str);
 
     // Get sensor's private aggregation key
     MPI_Irecv(key_str, serialisation_params->paillier_max_key_serialisation_chars, MPI_CHAR, 0, 0, MPI_COMM_WORLD, &agg_request);
     deserialise_aggkey(agg_key, key_str);
-    //gmp_printf("id: %d, agg key: %Zd\n", id, agg_key);
+    //gmp_fprintf(stderr, "id: %d, agg key: %Zd\n", id, agg_key);
 
     // Free the key mpi buffer as it's no longer needed
     free(key_str);
@@ -104,15 +104,15 @@ void run_sensor(int id, char *sensor_filepath_base, encoding_params_t *encoding_
 
     // Read number of timesteps
     sensor_input_err_check(fscanf(measurements_fp, "%d", &time_steps), 1, "Could not read timesteps!", id);
-    //printf("%d steps=%d\n", id, time_steps);
+    //fprintf(stderr, "%d steps=%d\n", id, time_steps);
 
     // Read navigator state dimension
     sensor_input_err_check(fscanf(measurements_fp, "%d", &state_dim), 1, "Could not read state dimension!", id);
-    //printf("%d state_dim=%d\n", id, state_dim);
+    //fprintf(stderr, "%d state_dim=%d\n", id, state_dim);
 
     // Read sensor location
     sensor_input_err_check(fscanf(measurements_fp, "%lf %lf", &loc_x, &loc_y), 2, "Could not read sensor location!", id);
-    //printf("%d loc=(%lf, %lf)\n", id, loc_x, loc_y);
+    //fprintf(stderr, "%d loc=(%lf, %lf)\n", id, loc_x, loc_y);
 
     // 888b     d888                                        d8888 888 888
     // 8888b   d8888                                       d88888 888 888
@@ -186,7 +186,7 @@ void run_sensor(int id, char *sensor_filepath_base, encoding_params_t *encoding_
 
 
         // hrh[0][0] = (4*invRadj)*x2 + (-8*invRadj*sx)*x + (4*invRadj*sx**2)
-        //printf("sensor %d h[0][0] = %lf\n", id, (4*inv_R_adj)*pow(0.1289492000, 2) + (-8*inv_R_adj*loc_x)*0.1289492000 + (4*inv_R_adj*pow(loc_x,2)));
+        //fprintf(stderr, "sensor %d h[0][0] = %lf\n", id, (4*inv_R_adj)*pow(0.1289492000, 2) + (-8*inv_R_adj*loc_x)*0.1289492000 + (4*inv_R_adj*pow(loc_x,2)));
         mat_elem = get_c_mtrx(hrh, 0, 0);
         encode_and_mult_enc(pubkey, mat_elem, enc_state.x2, 4*inv_R_adj, 0, encoding_params);
         encode_mult_then_add(pubkey, mat_elem, partial_sum, enc_state.x, -8*inv_R_adj*loc_x, encoding_params);
@@ -289,7 +289,7 @@ void run_sensor(int id, char *sensor_filepath_base, encoding_params_t *encoding_
         // Send encrypted matrix and vector
         send_enc_mat(hrh, state_dim, state_dim, hrh_enc_strs, &hrh_request, serialisation_params);
         send_enc_mat(hrz, 1, state_dim, hrz_enc_strs, &hrz_request, serialisation_params);
-        //printf("\nSensor %d sending : %s\n\n", id, hrh_enc_strs);
+        //fprintf(stderr, "\nSensor %d sending : %s\n\n", id, hrh_enc_strs);
     }
 
     // 888b     d888                                 8888888888
@@ -343,7 +343,7 @@ void get_all_bcast_state_vars(enc_state_info_t *s, char *enc_str, paillier_seria
 void get_bcast_state_var(ciphertext_t **state_var, char *enc_str, paillier_serialisation_params_t *serialisation_params){
     MPI_Bcast(enc_str, serialisation_params->paillier_max_enc_serialisation_chars, MPI_CHAR, 0, MPI_COMM_WORLD);
     *state_var = deserialise_encryption(enc_str);
-    //printf("got %s\n", enc_str);
+    //fprintf(stderr, "got %s\n", enc_str);
 }
 
 // Convenience method reducing weighted sum step to a shorter call
@@ -365,7 +365,7 @@ void send_enc_mat(c_mtrx_t *mat, int rows, int cols, char *enc_strs, MPI_Request
         for (int c=0; c<cols; c++){
             ind = enc_strs+(r*cols*(serialisation_params->paillier_max_enc_serialisation_chars)+c*(serialisation_params->paillier_max_enc_serialisation_chars));
             serialise_encryption(get_c_mtrx(mat, r, c), ind);
-            //printf("len enc (%d %d) of (%d %d) %ld\n", r, c, rows, cols, strlen(ind));
+            //fprintf(stderr, "len enc (%d %d) of (%d %d) %ld\n", r, c, rows, cols, strlen(ind));
         }
     }
     MPI_Wait(req, MPI_STATUS_IGNORE);

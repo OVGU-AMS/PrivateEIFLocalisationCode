@@ -101,7 +101,7 @@ void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int num_sensors, char *tr
 
     // Read number of time steps and the state dimension
     nav_input_err_check(fscanf(track_fp, "%d\n%d", &time_steps, &dimension), 2, "Could not read timesteps and dimension from track file!");
-    //printf("0 steps=%d, dimension=%d\n", time_steps, dimension);
+    //fprintf(stderr, "0 steps=%d, dimension=%d\n", time_steps, dimension);
 
     // Allocate state and covariance first as they must be populated from file
     state = gsl_vector_alloc(dimension);
@@ -116,10 +116,10 @@ void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int num_sensors, char *tr
             nav_input_err_check(fscanf(track_fp, "%lf", gsl_matrix_ptr(covariance, i, j)), 1, "Could not read inital covariance value from track file!");
         }
     }
-    printf("Initial state and covariance:\n");
+    fprintf(stderr, "Initial state and covariance:\n");
     print_gsl_vector(state, dimension);
     print_gsl_matrix(covariance, dimension, dimension);
-    printf("\n");
+    fprintf(stderr, "\n");
 
     // Done with init data, close file
     fclose(track_fp);
@@ -246,9 +246,9 @@ void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int num_sensors, char *tr
         // Decrypt the summed sensor matrices and vectors
         decrypt_mtrx(pubkey, prvkey, enc_hrh_sum, hrh_sum, 1, encoding_params);
         decrypt_vctr(pubkey, prvkey, enc_hrz_sum, hrz_sum, 1, encoding_params);
-        // printf("Matrix sum:\n");
+        // fprintf(stderr, "Matrix sum:\n");
         // print_gsl_matrix(hrh_sum, dimension, dimension);
-        // printf("Vector sum:\n");
+        // fprintf(stderr, "Vector sum:\n");
         // print_gsl_vector(hrz_sum, dimension);
 
         // Filter update step, convert to information filter form then back
@@ -264,10 +264,10 @@ void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int num_sensors, char *tr
         gsl_blas_dsymv(CblasUpper, 1.0, covariance, info_vec, 0.0, state);
 
         // Output estimated location
-        printf("time: %d\n", t);
-        printf("State:\n");
+        fprintf(stderr, "time: %d\n", t);
+        fprintf(stderr, "State:\n");
         print_gsl_vector(state, dimension);
-        printf("Covariance:\n");
+        fprintf(stderr, "Covariance:\n");
         print_gsl_matrix(covariance, dimension, dimension);
         fprintf(output_fp, "%lf %lf %lf %lf\n", gsl_vector_get(state, 0), gsl_vector_get(state, 1), gsl_vector_get(state, 2), gsl_vector_get(state, 3));
         fprintf(output_fp, "%lf %lf %lf %lf\n", gsl_matrix_get(covariance, 0, 0), gsl_matrix_get(covariance, 0, 1), gsl_matrix_get(covariance, 0, 2), gsl_matrix_get(covariance, 0, 3));

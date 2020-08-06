@@ -101,8 +101,6 @@ int main(int argc, char *argv[]){
         // Free aggregation key string buffers
         free(aggkey_strs);
 
-        start_time = clock();
-
         // 8888888b.                                                    d8b                   888
         // 888   Y88b                                                   Y8P                   888
         // 888    888                                                                         888
@@ -114,11 +112,15 @@ int main(int argc, char *argv[]){
         //                                                                       888
         //                                                                  Y8b d88P
         //                                                                   "Y88P"
+        start_time = clock();
         run_navigator(pubkey, prvkey, num_sensors, track_filepath, output_filepath, &encoding_params, &serialisation_params);
-        fprintf(stderr, "Navigator finished.\n");
-
         end_time = clock();
-        printf("Navigation ended in %lf seconds\n", (end_time-start_time)/1000000.0);
+
+        // Output only the run time of the navigator in seconds
+        printf("%lf\n", (end_time-start_time)/1000000.0);
+
+        // fprintf(stderr, "Navigator finished.\n");
+        // fprintf(stderr, "Navigation ended in %lf seconds\n", (end_time-start_time)/1000000.0);
 
         // Ensure all aggregation keys were sent and free array
         for (int s=0; s<num_sensors; s++){
@@ -154,7 +156,7 @@ int main(int argc, char *argv[]){
         
         // Either all or no arguments must be provided, error otherwise
         } else {
-            fprintf(stderr, "Incorrecct commandline usage!");
+            fprintf(stderr, "Incorrect commandline usage!");
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
 

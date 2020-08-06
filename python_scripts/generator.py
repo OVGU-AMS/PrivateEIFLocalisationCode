@@ -5,12 +5,9 @@
 import numpy as np
 
 
-TRACK_FILEPATH = "../input/track1.txt"
-SENSOR_FILEPATH_BASE = "../input/encoding_sim_%03d_sensor%d.txt"
-NUMBER_OF_SIMS = 100
 
+# These may remain constant, use num_sensors and first_sensor_index to select the sensor subset
 SENSOR_VARIANCE = 5.0
-
 SENSOR_LOCATIONS = [np.array([5.0, 5.0]), # Normal
                     np.array([40.0, 5.0]), 
                     np.array([5.0, 40.0]), 
@@ -28,45 +25,50 @@ SENSOR_LOCATIONS = [np.array([5.0, 5.0]), # Normal
                     np.array([22.0, 23.0]), 
                     np.array([23.0, 23.0])]
 
-NUM_SENSORS = 4
-FIRST_SENSOR_INDEX = 0
+# Defaults when this file run
+TRACK_FILEPATH_DEFAULT = "../input/default_track1.txt"
+SENSOR_FILEPATH_BASE_DEFAULT = "../input/debug_sensor%d.txt"
+NUM_SIMS_DEFAULT = 100
+NUM_SENSORS_DEFAULT = 4
+FIRST_SENSOR_INDEX_DEFAULT = 0
 
-SENSOR_LOCATIONS = SENSOR_LOCATIONS[FIRST_SENSOR_INDEX:]
 
-
-def generate_sim_inputs():
-    for s in range(1, NUMBER_OF_SIMS+1):
-        track_f = open(TRACK_FILEPATH, 'r')
-        sensor_fs = [open(SENSOR_FILEPATH_BASE % (s, i), 'w') for i in range(1, NUM_SENSORS+1)]
-        all_sensor_measurements = [[] for i in range(NUM_SENSORS)]
+# generate inputs for a particular simulation setup
+def generate_sim_inputs(track_filepath, sensor_filepath_base, number_of_sims, first_sensor_index, number_of_sensors):
+    for s in range(1, number_of_sims+1):
+        track_f = open(track_filepath, 'r')
+        sensor_fs = [open(sensor_filepath_base % (s, i), 'w') for i in range(1, number_of_sensors+1)]
+        all_sensor_measurements = [[] for i in range(number_of_sensors)]
 
         timesteps = int(track_f.readline())
         dimension = int(track_f.readline())
         init_state = np.array([float(x) for x in track_f.readline().split()])
         init_cov = np.array([[float(x) for x in track_f.readline().split()] for _ in range(dimension)])
 
-        for i in range(NUM_SENSORS):
+        for i in range(number_of_sensors):
             all_sensor_measurements[i].append("%d" % timesteps)
             all_sensor_measurements[i].append("%d" % dimension)
-            all_sensor_measurements[i].append("%lf %lf" % (SENSOR_LOCATIONS[i][0], SENSOR_LOCATIONS[i][1]))
+            all_sensor_measurements[i].append("%lf %lf" % (SENSOR_LOCATIONS[first_sensor_index+i][0], SENSOR_LOCATIONS[first_sensor_index+i][1]))
 
         for t in range(timesteps):
             gt = np.array([float(x) for x in track_f.readline().split()])
-            for i in range(NUM_SENSORS):
-                m = h(gt, SENSOR_LOCATIONS[i]) + np.random.normal(0, np.sqrt(SENSOR_VARIANCE))
+            for i in range(number_of_sensors):
+                m = h(gt, SENSOR_LOCATIONS[first_sensor_index+i]) + np.random.normal(0, np.sqrt(SENSOR_VARIANCE))
                 all_sensor_measurements[i].append("%lf" % m)
 
 
         track_f.close()
-        for i in range(NUM_SENSORS):
+        for i in range(number_of_sensors):
             sensor_fs[i].write('\n'.join(all_sensor_measurements[i]))
             sensor_fs[i].close()
     return
 
 
+# Measurement function
 def h(x, s):
     return np.linalg.norm(np.array([x[0], x[2]]) - s)
 
 
+# On running this file, run with default params above
 if __name__ == "__main__":
-    generate_sim_inputs()
+    generate_sim_inputs(TRACK_FILEPATH_DEFAULT, SENSOR_FILEPATH_BASE_DEFAULT, NUM_SIMS_DEFAULT, FIRST_SENSOR_INDEX_DEFAULT, NUM_SENSORS_DEFAULT)
