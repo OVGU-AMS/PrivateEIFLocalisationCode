@@ -167,32 +167,32 @@ void refresh_encryption(pubkey_t *pubkey, ciphertext_t *dst, ciphertext_t *src){
 //                                                                           888                                          888
 
 // Encode and encrypt a float, given public key and number of multiplications for encoding
-void encode_and_enc(pubkey_t *pubkey, ciphertext_t *res, double a, unsigned int mults){
+void encode_and_enc(pubkey_t *pubkey, ciphertext_t *res, double a, unsigned int mults, encoding_params_t *encoding_params){
     paillier_plaintext_t *p = paillier_plaintext_from_ui(0);
-    encode_from_dbl(p->m, a, mults, MOD_BITS, FRAC_BITS);
+    encode_from_dbl(p->m, a, mults, encoding_params);
     paillier_enc(res, pubkey, p, paillier_get_rand_devurandom);
     paillier_freeplaintext(p);
 }
 
 // Encode and put g to power of encoding mod N^2 (encrypt without noise term)
-void encode_and_enc_no_noise(pubkey_t *pubkey, ciphertext_t *res, double a, unsigned int mults){
+void encode_and_enc_no_noise(pubkey_t *pubkey, ciphertext_t *res, double a, unsigned int mults, encoding_params_t *encoding_params){
     paillier_plaintext_t *p = paillier_plaintext_from_ui(0);
-    encode_from_dbl(p->m, a, mults, MOD_BITS, FRAC_BITS);
+    encode_from_dbl(p->m, a, mults, encoding_params);
     mpz_powm(res->c, pubkey->n_plusone, p->m, pubkey->n_squared);
     paillier_freeplaintext(p);
 }
 
 // Decrypt and decode encryption to a float given necessary keys and the number of multiplications for decoding
-double dec_and_decode(pubkey_t *pubkey, prvkey_t *prvkey, ciphertext_t *ct, unsigned int mults){
+double dec_and_decode(pubkey_t *pubkey, prvkey_t *prvkey, ciphertext_t *ct, unsigned int mults, encoding_params_t *encoding_params){
     paillier_plaintext_t *p = paillier_plaintext_from_ui(0);
     paillier_dec(p, pubkey, prvkey, ct);
-    return decode_to_dbl(p->m, mults, MOD_BITS, FRAC_BITS);
+    return decode_to_dbl(p->m, mults, encoding_params);
 }
 
 // Encode value and multipy given encryption by it
-void encode_and_mult_enc(pubkey_t *pubkey, ciphertext_t *res, ciphertext_t *ct, double a, unsigned int mults){
+void encode_and_mult_enc(pubkey_t *pubkey, ciphertext_t *res, ciphertext_t *ct, double a, unsigned int mults, encoding_params_t *encoding_params){
     paillier_plaintext_t *p = paillier_plaintext_from_ui(0);
-    encode_from_dbl(p->m, a, mults, MOD_BITS, FRAC_BITS);
+    encode_from_dbl(p->m, a, mults, encoding_params);
     paillier_exp(pubkey, res, ct, p);
     paillier_freeplaintext(p);
 }

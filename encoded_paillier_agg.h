@@ -12,12 +12,20 @@
 #include <openssl/evp.h>
 #include "encoding.h"
 
-#define PAILLIER_BITSIZE 1024
+
 // Do not change serialisation base, Paillier library has this hardcoded -.-
 #define SERIALISATION_BASE 16
+
+#define PAILLIER_BITSIZE_DEFAULT 1024
 // N^2 in base above, plus 1 for null termination
-#define MAX_KEY_SERIALISATION_CHARS 1025
-#define MAX_ENC_SERIALISATION_CHARS 1025
+#define PAILLIER_MAX_KEY_SERIALISATION_CHARS_DEFAULT 1025
+#define PAILLIER_MAX_ENC_SERIALISATION_CHARS_DEFAULT 1025
+
+typedef struct PaillierSerialisationParamsTag {
+    unsigned int paillier_bitsize;
+    unsigned int paillier_max_key_serialisation_chars;
+    unsigned int paillier_max_enc_serialisation_chars;
+} paillier_serialisation_params_t;
 
 typedef struct pubkeyTag pubkey_t;
 typedef struct prvkeyTag prvkey_t;
@@ -50,10 +58,10 @@ void refresh_encryption(pubkey_t *pubkey, ciphertext_t *dst, ciphertext_t *src);
 // ====================== // Homomorphic operations // ====================== //
 // encode_and_enc does no allocation
 
-void encode_and_enc(pubkey_t *pubkey, ciphertext_t *res, double a, unsigned int mults);
-void encode_and_enc_no_noise(pubkey_t *pubkey, ciphertext_t *res, double a, unsigned int mults);
-double dec_and_decode(pubkey_t *pubkey, prvkey_t *prvkey, ciphertext_t *ct, unsigned int mults);
-void encode_and_mult_enc(pubkey_t *pubkey, ciphertext_t *res, ciphertext_t *ct, double a, unsigned int mults);
+void encode_and_enc(pubkey_t *pubkey, ciphertext_t *res, double a, unsigned int mults, encoding_params_t *encoding_params);
+void encode_and_enc_no_noise(pubkey_t *pubkey, ciphertext_t *res, double a, unsigned int mults, encoding_params_t *encoding_params);
+double dec_and_decode(pubkey_t *pubkey, prvkey_t *prvkey, ciphertext_t *ct, unsigned int mults, encoding_params_t *encoding_params);
+void encode_and_mult_enc(pubkey_t *pubkey, ciphertext_t *res, ciphertext_t *ct, double a, unsigned int mults, encoding_params_t *encoding_params);
 void add_encs(pubkey_t *pubkey, ciphertext_t *res, ciphertext_t *ct1, ciphertext_t *ct2);
 
 // ====================== // Aggregation // ====================== //

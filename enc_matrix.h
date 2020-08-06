@@ -32,9 +32,9 @@ void set_c_mtrx(c_mtrx_t *m, int row, int col, ciphertext_t *in);
 // ====================== // Encryption and decryption // ====================== //
 // No compatible size checks between in and out matrices is made
 
-void encrypt_mtrx(pubkey_t *pubkey, gsl_matrix *plain_mat, c_mtrx_t *enc_mat, unsigned int mults);
-void decrypt_mtrx(pubkey_t *pubkey, prvkey_t *prvkey, c_mtrx_t *enc_mat, gsl_matrix *plain_mat, unsigned int mults);
-void decrypt_vctr(pubkey_t *pubkey, prvkey_t *prvkey, c_mtrx_t *enc_mat, gsl_vector *plain_vec, unsigned int mults);
+void encrypt_mtrx(pubkey_t *pubkey, gsl_matrix *plain_mat, c_mtrx_t *enc_mat, unsigned int mults, encoding_params_t *encoding_params);
+void decrypt_mtrx(pubkey_t *pubkey, prvkey_t *prvkey, c_mtrx_t *enc_mat, gsl_matrix *plain_mat, unsigned int mults, encoding_params_t *encoding_params);
+void decrypt_vctr(pubkey_t *pubkey, prvkey_t *prvkey, c_mtrx_t *enc_mat, gsl_vector *plain_vec, unsigned int mults, encoding_params_t *encoding_params);
 
 // ====================== // Homomrphic actions // ====================== //
 

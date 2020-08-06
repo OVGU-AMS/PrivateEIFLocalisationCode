@@ -22,8 +22,9 @@
 
 
 
-void encode_from_dbl(mpz_t res, double x, unsigned int mults, unsigned int mod_bits, unsigned int frac_bits){
+void encode_from_dbl(mpz_t res, double x, unsigned int mults, encoding_params_t *encoding_params){
     int sign = 0;
+    unsigned int adj_frac_bits;
     mpz_t mx_enc, frac_factor;
     mpf_t scaled_x, mx_enc_f, frac_factor_f;
 
@@ -39,11 +40,13 @@ void encode_from_dbl(mpz_t res, double x, unsigned int mults, unsigned int mod_b
         x = -x;
     }
 
-    mpz_ui_pow_ui(mx_enc, 2, mod_bits);
+    mpz_ui_pow_ui(mx_enc, 2, encoding_params->mod_bits);
     if (mults > 0){
-        frac_bits = frac_bits*(mults+1);
+        adj_frac_bits = (encoding_params->frac_bits)*(mults+1);
+    } else {
+        adj_frac_bits = encoding_params->frac_bits;
     }
-    mpz_ui_pow_ui(frac_factor, 2, frac_bits);
+    mpz_ui_pow_ui(frac_factor, 2, adj_frac_bits);
 
     
     mpf_set_z(frac_factor_f, frac_factor);
@@ -81,8 +84,9 @@ void encode_from_dbl(mpz_t res, double x, unsigned int mults, unsigned int mod_b
 
 
 
-double decode_to_dbl(mpz_t e, unsigned int mults, unsigned int mod_bits, unsigned int frac_bits){
+double decode_to_dbl(mpz_t e, unsigned int mults, encoding_params_t *encoding_params){
     int sign = 0;
+    unsigned int adj_frac_bits;
     double res;
     mpz_t e_copy, mx_enc, mx_enc_hlf, frac_factor;
     mpf_t e_f, frac_factor_f;
@@ -92,13 +96,15 @@ double decode_to_dbl(mpz_t e, unsigned int mults, unsigned int mod_bits, unsigne
     mpz_init(mx_enc_hlf);
     mpz_init(frac_factor);
 
-    mpz_ui_pow_ui(mx_enc, 2, mod_bits);
-    mpz_ui_pow_ui(mx_enc_hlf, 2, mod_bits-1);
+    mpz_ui_pow_ui(mx_enc, 2, encoding_params->mod_bits);
+    mpz_ui_pow_ui(mx_enc_hlf, 2, (encoding_params->mod_bits)-1);
 
     if (mults > 0){
-        frac_bits = frac_bits*(mults+1);
+        adj_frac_bits = (encoding_params->frac_bits)*(mults+1);
+    } else {
+        adj_frac_bits = encoding_params->frac_bits;
     }
-    mpz_ui_pow_ui(frac_factor, 2, frac_bits);
+    mpz_ui_pow_ui(frac_factor, 2, adj_frac_bits);
     
     mpf_init(e_f);
     mpf_init(frac_factor_f);

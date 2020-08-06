@@ -7,9 +7,9 @@
 
 // Private functions
 void init_filter_model(gsl_matrix *F, gsl_matrix *Q);
-void broadcast_all_enc_state_vars(pubkey_t *pubkey, ciphertext_t *ct, char *enc_str, gsl_vector *state);
-void broadcast_enc_state_var(pubkey_t *pubkey, ciphertext_t *ct, char *enc_str, double val);
-void get_enc_str_from_sensor(int src_sensor, int rows, int cols, char *enc_strs, int send_tag, MPI_Request *r);
+void broadcast_all_enc_state_vars(pubkey_t *pubkey, ciphertext_t *ct, char *enc_str, gsl_vector *state, encoding_params_t *encoding_params, paillier_serialisation_params_t *serialisation_params);
+void broadcast_enc_state_var(pubkey_t *pubkey, ciphertext_t *ct, char *enc_str, double val, encoding_params_t *encoding_params, paillier_serialisation_params_t *serialisation_params);
+void get_enc_str_from_sensor(int src_sensor, int rows, int cols, char *enc_strs, int send_tag, MPI_Request *r, paillier_serialisation_params_t *serialisation_params);
 void reset_recieved_flags(int *received_flags, int num_sensors, int *first_received);
 int are_all_received(int *received_flags, int num_sensors);
 void poll_sensor_and_aggregate(pubkey_t *pubkey, 
@@ -20,20 +20,23 @@ void poll_sensor_and_aggregate(pubkey_t *pubkey,
                                 int dim2, 
                                 char *enc_mat_str,
                                 c_mtrx_t *enc_mat,
-                                c_mtrx_t *enc_mat_sum);
-void get_c_mtrx_from_enc_str(c_mtrx_t *m, int rows, int cols, char *enc_strs);
+                                c_mtrx_t *enc_mat_sum, 
+                                paillier_serialisation_params_t *serialisation_params);
+void get_c_mtrx_from_enc_str(c_mtrx_t *m, int rows, int cols, char *enc_strs, paillier_serialisation_params_t *serialisation_params);
 void copy_matrix(c_mtrx_t *to_copy_to, c_mtrx_t *to_copy_from, int rows, int cols);
 void print_gsl_vector(gsl_vector *v, int d);
 void print_gsl_matrix(gsl_matrix *m, int r, int c);
 void nav_input_err_check(int val, int expected, char *msg);
 
 
-void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int num_sensors, char *track_filename, char *output_filepath){
+void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int num_sensors, char *track_filename, char *output_filepath, 
+                    encoding_params_t *encoding_params, paillier_serialisation_params_t *serialisation_params){
+
     // track file var
     FILE *track_fp, *output_fp;
 
     // Sending encrypted state vars
-    char enc_str[MAX_KEY_SERIALISATION_CHARS];
+    char *enc_str;
     ciphertext_t *state_enc;
 
     // Vars for sensor encryptions
@@ -137,6 +140,7 @@ void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int num_sensors, char *tr
     state_enc = init_ciphertext();
 
     // Allocate memory for recieved encrypted matrices
+    enc_str = (char *)malloc(serialisation_params->paillier_max_enc_serialisation_chars * sizeof(char));
     enc_hrhs = (c_mtrx_t **)malloc(num_sensors*sizeof(c_mtrx_t *));
     enc_hrzs = (c_mtrx_t **)malloc(num_sensors*sizeof(c_mtrx_t *));
     for (int s=0; s<num_sensors; s++){
@@ -154,8 +158,8 @@ void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int num_sensors, char *tr
     hrh_enc_strs = (char **)malloc(num_sensors*sizeof(char *));
     hrz_enc_strs = (char **)malloc(num_sensors*sizeof(char *));
     for (int s=0; s<num_sensors; s++){
-        hrh_enc_strs[s] = (char *)malloc(dimension*dimension*MAX_ENC_SERIALISATION_CHARS*sizeof(char));
-        hrz_enc_strs[s] = (char *)malloc(dimension*MAX_ENC_SERIALISATION_CHARS*sizeof(char));
+        hrh_enc_strs[s] = (char *)malloc(dimension*dimension*(serialisation_params->paillier_max_enc_serialisation_chars)*sizeof(char));
+        hrz_enc_strs[s] = (char *)malloc(dimension*(serialisation_params->paillier_max_enc_serialisation_chars)*sizeof(char));
     }
     hrh_received_flags = (int *)malloc(num_sensors*sizeof(int));
     hrz_received_flags = (int *)malloc(num_sensors*sizeof(int));
@@ -199,12 +203,12 @@ void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int num_sensors, char *tr
         gsl_matrix_add(covariance, Q);
 
         // Encrypt and broadcast the state variables
-        broadcast_all_enc_state_vars(pubkey, state_enc, enc_str, state);
+        broadcast_all_enc_state_vars(pubkey, state_enc, enc_str, state, encoding_params, serialisation_params);
 
         // Async receive of all hrh and hrz matrices from all sensors
         for (int s=0; s<num_sensors; s++){
-            get_enc_str_from_sensor(s+1, dimension, dimension, hrh_enc_strs[s], 0, hrh_requests+s);
-            get_enc_str_from_sensor(s+1, 1, dimension, hrz_enc_strs[s], 1, hrz_requests+s);
+            get_enc_str_from_sensor(s+1, dimension, dimension, hrh_enc_strs[s], 0, hrh_requests+s, serialisation_params);
+            get_enc_str_from_sensor(s+1, 1, dimension, hrz_enc_strs[s], 1, hrz_requests+s, serialisation_params);
         }
 
         // Construct the hrh and hrz sum matrices as the sensor matrices arrive, in order of arrival/poll
@@ -223,7 +227,8 @@ void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int num_sensors, char *tr
                                 dimension, 
                                 hrh_enc_strs[s],
                                 enc_hrhs[s],
-                                enc_hrh_sum);
+                                enc_hrh_sum, 
+                                serialisation_params);
 
                 poll_sensor_and_aggregate(pubkey, 
                                 hrz_received_flags+s, 
@@ -233,13 +238,14 @@ void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int num_sensors, char *tr
                                 dimension,
                                 hrz_enc_strs[s],
                                 enc_hrzs[s],
-                                enc_hrz_sum);
+                                enc_hrz_sum, 
+                                serialisation_params);
             }
         }
 
         // Decrypt the summed sensor matrices and vectors
-        decrypt_mtrx(pubkey, prvkey, enc_hrh_sum, hrh_sum, 1);
-        decrypt_vctr(pubkey, prvkey, enc_hrz_sum, hrz_sum, 1);
+        decrypt_mtrx(pubkey, prvkey, enc_hrh_sum, hrh_sum, 1, encoding_params);
+        decrypt_vctr(pubkey, prvkey, enc_hrz_sum, hrz_sum, 1, encoding_params);
         // printf("Matrix sum:\n");
         // print_gsl_matrix(hrh_sum, dimension, dimension);
         // printf("Vector sum:\n");
@@ -318,6 +324,7 @@ void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int num_sensors, char *tr
     }
     free(enc_hrhs);
     free(enc_hrzs);
+    free(enc_str);
     free_ciphertext(state_enc);
 }
 
@@ -375,28 +382,28 @@ void init_filter_model(gsl_matrix *F, gsl_matrix *Q){
 }
 
 // Encrypt and broadcast the state variables x,x2,x3,y,xy,x2y,y2,xy2,y3 in that order
-void broadcast_all_enc_state_vars(pubkey_t *pubkey, ciphertext_t *ct, char *enc_str, gsl_vector *state){
-    broadcast_enc_state_var(pubkey, ct, enc_str, gsl_vector_get(state, 0));
-    broadcast_enc_state_var(pubkey, ct, enc_str, pow(gsl_vector_get(state, 0), 2));
-    broadcast_enc_state_var(pubkey, ct, enc_str, pow(gsl_vector_get(state, 0), 3));
-    broadcast_enc_state_var(pubkey, ct, enc_str, gsl_vector_get(state, 2));
-    broadcast_enc_state_var(pubkey, ct, enc_str, gsl_vector_get(state, 0)*gsl_vector_get(state, 2));
-    broadcast_enc_state_var(pubkey, ct, enc_str, pow(gsl_vector_get(state, 0), 2)*gsl_vector_get(state, 2));
-    broadcast_enc_state_var(pubkey, ct, enc_str, pow(gsl_vector_get(state, 2), 2));
-    broadcast_enc_state_var(pubkey, ct, enc_str, gsl_vector_get(state, 0)*pow(gsl_vector_get(state, 2), 2));
-    broadcast_enc_state_var(pubkey, ct, enc_str, pow(gsl_vector_get(state, 2), 3));
+void broadcast_all_enc_state_vars(pubkey_t *pubkey, ciphertext_t *ct, char *enc_str, gsl_vector *state, encoding_params_t *encoding_params, paillier_serialisation_params_t *serialisation_params){
+    broadcast_enc_state_var(pubkey, ct, enc_str, gsl_vector_get(state, 0), encoding_params, serialisation_params);
+    broadcast_enc_state_var(pubkey, ct, enc_str, pow(gsl_vector_get(state, 0), 2), encoding_params, serialisation_params);
+    broadcast_enc_state_var(pubkey, ct, enc_str, pow(gsl_vector_get(state, 0), 3), encoding_params, serialisation_params);
+    broadcast_enc_state_var(pubkey, ct, enc_str, gsl_vector_get(state, 2), encoding_params, serialisation_params);
+    broadcast_enc_state_var(pubkey, ct, enc_str, gsl_vector_get(state, 0)*gsl_vector_get(state, 2), encoding_params, serialisation_params);
+    broadcast_enc_state_var(pubkey, ct, enc_str, pow(gsl_vector_get(state, 0), 2)*gsl_vector_get(state, 2), encoding_params, serialisation_params);
+    broadcast_enc_state_var(pubkey, ct, enc_str, pow(gsl_vector_get(state, 2), 2), encoding_params, serialisation_params);
+    broadcast_enc_state_var(pubkey, ct, enc_str, gsl_vector_get(state, 0)*pow(gsl_vector_get(state, 2), 2), encoding_params, serialisation_params);
+    broadcast_enc_state_var(pubkey, ct, enc_str, pow(gsl_vector_get(state, 2), 3), encoding_params, serialisation_params);
 }
 
 // Encrypt serialise and broadcast a state variable
-void broadcast_enc_state_var(pubkey_t *pubkey, ciphertext_t *ct, char *enc_str, double val){
-    encode_and_enc(pubkey, ct, val, 0);
+void broadcast_enc_state_var(pubkey_t *pubkey, ciphertext_t *ct, char *enc_str, double val, encoding_params_t *encoding_params, paillier_serialisation_params_t *serialisation_params){
+    encode_and_enc(pubkey, ct, val, 0, encoding_params);
     serialise_encryption(ct, enc_str);
-    MPI_Bcast(enc_str, MAX_KEY_SERIALISATION_CHARS, MPI_CHAR, 0, MPI_COMM_WORLD);
+    MPI_Bcast(enc_str, serialisation_params->paillier_max_enc_serialisation_chars, MPI_CHAR, 0, MPI_COMM_WORLD);
 }
 
 // Async recieval of serialised encrypted matrix (or vector) from a sensor
-void get_enc_str_from_sensor(int src_sensor, int rows, int cols, char *enc_strs, int send_tag, MPI_Request *r){
-    MPI_Irecv(enc_strs, rows*cols*MAX_ENC_SERIALISATION_CHARS, MPI_CHAR, src_sensor, send_tag, MPI_COMM_WORLD, r);
+void get_enc_str_from_sensor(int src_sensor, int rows, int cols, char *enc_strs, int send_tag, MPI_Request *r, paillier_serialisation_params_t *serialisation_params){
+    MPI_Irecv(enc_strs, rows*cols*(serialisation_params->paillier_max_enc_serialisation_chars), MPI_CHAR, src_sensor, send_tag, MPI_COMM_WORLD, r);
 }
 
 // Set all received flags to 0
@@ -429,7 +436,8 @@ void poll_sensor_and_aggregate(pubkey_t *pubkey,
                                 int dim2, 
                                 char *enc_mat_str,
                                 c_mtrx_t *enc_mat,
-                                c_mtrx_t *enc_mat_sum){
+                                c_mtrx_t *enc_mat_sum,
+                                paillier_serialisation_params_t *serialisation_params){
     
     // If matrix not yet received from request, poll the receive request again
     int test_request;
@@ -437,7 +445,7 @@ void poll_sensor_and_aggregate(pubkey_t *pubkey,
         MPI_Test(request, &test_request, MPI_STATUS_IGNORE);
         if (test_request){
             *received_flag = 1;
-            get_c_mtrx_from_enc_str(enc_mat, dim1, dim2, enc_mat_str);
+            get_c_mtrx_from_enc_str(enc_mat, dim1, dim2, enc_mat_str, serialisation_params);
 
             // If it's the first sensor to send initialise the sum with it's matrix
             if (!*first_received_flag){
@@ -453,11 +461,11 @@ void poll_sensor_and_aggregate(pubkey_t *pubkey,
 }
 
 // Convert serialised encrypted matrix to encrypted matrix type
-void get_c_mtrx_from_enc_str(c_mtrx_t *m, int rows, int cols, char *enc_strs){
+void get_c_mtrx_from_enc_str(c_mtrx_t *m, int rows, int cols, char *enc_strs, paillier_serialisation_params_t *serialisation_params){
     char *ind;
     for (int r=0; r<rows; r++){
         for (int c=0; c<cols; c++){
-            ind = enc_strs+(r*cols*MAX_ENC_SERIALISATION_CHARS+c*MAX_ENC_SERIALISATION_CHARS);
+            ind = enc_strs+(r*cols*(serialisation_params->paillier_max_enc_serialisation_chars)+c*(serialisation_params->paillier_max_enc_serialisation_chars));
             set_c_mtrx(m, r, c, deserialise_encryption(ind));
         }
     }

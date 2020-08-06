@@ -16,6 +16,6 @@
 
 #define SENSOR_VARIANCE 5.0
 
-void run_sensor(int id, char *sensor_filepath_base);
+void run_sensor(int id, char *sensor_filepath_base, encoding_params_t *encoding_params, paillier_serialisation_params_t *serialisation_params);
 
 #endif

@@ -22,9 +22,11 @@ int main(int argc, char *argv[]){
     int num_procs;
     int num_sensors;
     int proc_id;
-    char *track_filepath;
-    char *output_filepath;
-    char *sensor_filepath_base;
+    char *track_filepath = NULL;
+    char *output_filepath = NULL;
+    char *sensor_filepath_base = NULL;
+    encoding_params_t encoding_params;
+    paillier_serialisation_params_t serialisation_params;
     clock_t start_time, end_time;
 
     // Init multi processing
@@ -42,30 +44,53 @@ int main(int argc, char *argv[]){
     if (proc_id == 0){
         pubkey_t *pubkey;
         prvkey_t *prvkey;
-        aggkey_t *aggkeys = (aggkey_t*)malloc(num_sensors*sizeof(aggkey_t));
-        char *aggkey_strs = (char *)malloc(num_sensors*MAX_KEY_SERIALISATION_CHARS*sizeof(char));
-        MPI_Request *agg_requests = (MPI_Request *)malloc(num_sensors*sizeof(MPI_Request));
+        aggkey_t *aggkeys;
+        char *aggkey_strs;
+        MPI_Request *agg_requests;
 
-        // Get track filepath
+        // If no commandline argument initialise paillier and encoding with defaults
         if (argc == 1){
             track_filepath = "input/debug_track1.txt";
             output_filepath = "output/debug_nav1.txt";
-        } else{
-            track_filepath = argv[1];
-            output_filepath = argv[2];
+            encoding_params.mod_bits = ENCODING_MOD_BITS_DEFAULT;
+            encoding_params.frac_bits = ENCODING_FRAC_BITS_DEFAULT;
+            serialisation_params.paillier_bitsize = PAILLIER_BITSIZE_DEFAULT;
+            serialisation_params.paillier_max_key_serialisation_chars = PAILLIER_MAX_KEY_SERIALISATION_CHARS_DEFAULT;
+            serialisation_params.paillier_max_enc_serialisation_chars = PAILLIER_MAX_ENC_SERIALISATION_CHARS_DEFAULT;
+        
+        // If arguments provided, use them instead
+        } else if (argc == 7){
+            serialisation_params.paillier_bitsize = atoi(argv[1]);
+            encoding_params.mod_bits = atoi(argv[2]);
+            encoding_params.frac_bits = atoi(argv[3]);
+            output_filepath = argv[4];
+            track_filepath = argv[5];
+
+            serialisation_params.paillier_max_key_serialisation_chars = (serialisation_params.paillier_bitsize/2) + 1;
+            serialisation_params.paillier_max_enc_serialisation_chars = (serialisation_params.paillier_bitsize/2) + 1;
+        
+        // Either all or no arguments must be provided, error otherwise
+        } else {
+            fprintf(stderr, "Incorrecct commandline usage!");
+            MPI_Abort(MPI_COMM_WORLD, 1);
         }
 
+        // Alloc key and key distribution vars
+        aggkeys = (aggkey_t*)malloc(num_sensors*sizeof(aggkey_t));
+        aggkey_strs = (char *)malloc(num_sensors*(serialisation_params.paillier_max_key_serialisation_chars)*sizeof(char));
+        agg_requests = (MPI_Request *)malloc(num_sensors*sizeof(MPI_Request));
+
         // Generate Paillier keys
-        key_gen(PAILLIER_BITSIZE, &pubkey, &prvkey);
+        key_gen(serialisation_params.paillier_bitsize, &pubkey, &prvkey);
 
         // Generate aggregation keys
         agg_key_gen(pubkey, num_sensors, aggkeys);
 
         // Broadcast Paillier key
-        dist_phe_key(num_sensors, pubkey);
+        dist_phe_key(num_sensors, pubkey, &serialisation_params);
 
         // Distributed aggregation keys
-        dist_agg_keys(num_sensors, aggkeys, aggkey_strs, agg_requests);
+        dist_agg_keys(num_sensors, aggkeys, aggkey_strs, agg_requests, &serialisation_params);
 
         // Free aggregation keys
         for (int s=0; s<num_sensors; s++){
@@ -78,8 +103,18 @@ int main(int argc, char *argv[]){
 
         start_time = clock();
 
-        // Run navigator
-        run_navigator(pubkey, prvkey, num_sensors, track_filepath, output_filepath);
+        // 8888888b.                                                    d8b                   888
+        // 888   Y88b                                                   Y8P                   888
+        // 888    888                                                                         888
+        // 888   d88P 888  888 88888b.       88888b.   8888b.  888  888 888  .d88b.   8888b.  888888 .d88b.  888d888
+        // 8888888P"  888  888 888 "88b      888 "88b     "88b 888  888 888 d88P"88b     "88b 888   d88""88b 888P"
+        // 888 T88b   888  888 888  888      888  888 .d888888 Y88  88P 888 888  888 .d888888 888   888  888 888
+        // 888  T88b  Y88b 888 888  888      888  888 888  888  Y8bd8P  888 Y88b 888 888  888 Y88b. Y88..88P 888
+        // 888   T88b  "Y88888 888  888      888  888 "Y888888   Y88P   888  "Y88888 "Y888888  "Y888 "Y88P"  888
+        //                                                                       888
+        //                                                                  Y8b d88P
+        //                                                                   "Y88P"
+        run_navigator(pubkey, prvkey, num_sensors, track_filepath, output_filepath, &encoding_params, &serialisation_params);
         fprintf(stderr, "Navigator finished.\n");
 
         end_time = clock();
@@ -98,14 +133,43 @@ int main(int argc, char *argv[]){
     // Remaining processes are the sensors
     } else {
 
-        // Get sensor measurements filepath
-        if (argc <= 3){
+        // If no commandline argument initialise paillier and encoding with defaults
+        if (argc == 1){
             sensor_filepath_base = "input/debug_sensor%d.txt";
+            encoding_params.mod_bits = ENCODING_MOD_BITS_DEFAULT;
+            encoding_params.frac_bits = ENCODING_FRAC_BITS_DEFAULT;
+            serialisation_params.paillier_bitsize = PAILLIER_BITSIZE_DEFAULT;
+            serialisation_params.paillier_max_key_serialisation_chars = PAILLIER_MAX_KEY_SERIALISATION_CHARS_DEFAULT;
+            serialisation_params.paillier_max_enc_serialisation_chars = PAILLIER_MAX_ENC_SERIALISATION_CHARS_DEFAULT;
+        
+        // If arguments provided, use them instead
+        } else if (argc == 7){
+            serialisation_params.paillier_bitsize = atoi(argv[1]);
+            encoding_params.mod_bits = atoi(argv[2]);
+            encoding_params.frac_bits = atoi(argv[3]);
+            sensor_filepath_base = argv[6];
+            
+            serialisation_params.paillier_max_key_serialisation_chars = (serialisation_params.paillier_bitsize/2) + 1;
+            serialisation_params.paillier_max_enc_serialisation_chars = (serialisation_params.paillier_bitsize/2) + 1;
+        
+        // Either all or no arguments must be provided, error otherwise
         } else {
-            sensor_filepath_base = argv[3];
+            fprintf(stderr, "Incorrecct commandline usage!");
+            MPI_Abort(MPI_COMM_WORLD, 1);
         }
 
-        run_sensor(proc_id, sensor_filepath_base);
+        // 8888888b.
+        // 888   Y88b
+        // 888    888
+        // 888   d88P 888  888 88888b.       .d8888b   .d88b.  88888b.  .d8888b   .d88b.  888d888 .d8888b
+        // 8888888P"  888  888 888 "88b      88K      d8P  Y8b 888 "88b 88K      d88""88b 888P"   88K
+        // 888 T88b   888  888 888  888      "Y8888b. 88888888 888  888 "Y8888b. 888  888 888     "Y8888b.
+        // 888  T88b  Y88b 888 888  888           X88 Y8b.     888  888      X88 Y88..88P 888          X88
+        // 888   T88b  "Y88888 888  888       88888P'  "Y8888  888  888  88888P'  "Y88P"  888      88888P'
+
+
+
+        run_sensor(proc_id, sensor_filepath_base, &encoding_params, &serialisation_params);
         fprintf(stderr, "Sensor %d finished.\n", proc_id);
     }
 

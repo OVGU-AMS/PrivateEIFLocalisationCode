@@ -30,7 +30,7 @@ def run_all_simulation_repeats(num_simulations, num_sensors, input_track_fp, out
 	cwd = '../'
 	for i in range(1, num_simulations+1):
 		print("Running simulation %d" % i)
-		args = ['mpirun', '-np', str(num_sensors+1), 'build/sim', input_track_fp, output_fp_base % i, sensor_fp_base % (i, "%d")]
+		args = ['mpirun', '-np', str(num_sensors+1), 'build/sim', "1024", "128", "32", output_fp_base % i, input_track_fp, sensor_fp_base % (i, "%d")]
 		print(args)
 
 		# shell=False (do not use the the shell -> no piping, redirecting, etc, but much faster)

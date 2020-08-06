@@ -135,30 +135,30 @@ void set_c_mtrx(c_mtrx_t *m, int row, int col, ciphertext_t *in){
 
 
 
-void encrypt_mtrx(pubkey_t *pubkey, gsl_matrix *plain_mat, c_mtrx_t *enc_mat, unsigned int mults){
+void encrypt_mtrx(pubkey_t *pubkey, gsl_matrix *plain_mat, c_mtrx_t *enc_mat, unsigned int mults, encoding_params_t *encoding_params){
     for (int i=0; i<enc_mat->size1;i++){
         for (int j=0; j<enc_mat->size2;j++){
             if (enc_mat->data[i][j] == NULL){
                 enc_mat->data[i][j] = init_ciphertext();
             }
-            encode_and_enc(pubkey, enc_mat->data[i][j], gsl_matrix_get(plain_mat, i, j), mults);
+            encode_and_enc(pubkey, enc_mat->data[i][j], gsl_matrix_get(plain_mat, i, j), mults, encoding_params);
         }
     }
     return;
 }
 
-void decrypt_mtrx(pubkey_t *pubkey, prvkey_t *prvkey, c_mtrx_t *enc_mat, gsl_matrix *plain_mat, unsigned int mults){
+void decrypt_mtrx(pubkey_t *pubkey, prvkey_t *prvkey, c_mtrx_t *enc_mat, gsl_matrix *plain_mat, unsigned int mults, encoding_params_t *encoding_params){
     for (int i=0; i<enc_mat->size1;i++){
         for (int j=0; j<enc_mat->size2;j++){
-            gsl_matrix_set(plain_mat, i, j, dec_and_decode(pubkey, prvkey, enc_mat->data[i][j], mults));
+            gsl_matrix_set(plain_mat, i, j, dec_and_decode(pubkey, prvkey, enc_mat->data[i][j], mults, encoding_params));
         }
     }
     return;
 }
 
-void decrypt_vctr(pubkey_t *pubkey, prvkey_t *prvkey, c_mtrx_t *enc_mat, gsl_vector *plain_vec, unsigned int mults){
+void decrypt_vctr(pubkey_t *pubkey, prvkey_t *prvkey, c_mtrx_t *enc_mat, gsl_vector *plain_vec, unsigned int mults, encoding_params_t *encoding_params){
     for (int j=0; j<enc_mat->size2;j++){
-        gsl_vector_set(plain_vec, j, dec_and_decode(pubkey, prvkey, enc_mat->data[0][j], mults));
+        gsl_vector_set(plain_vec, j, dec_and_decode(pubkey, prvkey, enc_mat->data[0][j], mults, encoding_params));
     }
     return;
 }

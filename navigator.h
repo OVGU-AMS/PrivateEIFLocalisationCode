@@ -15,6 +15,7 @@
 #include "encoded_paillier_agg.h"
 #include "enc_matrix.h"
 
-void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int number_sensors, char *track_filename, char *output_filepath);
+void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int number_sensors, char *track_filename, char *output_filepath, 
+                    encoding_params_t *encoding_params, paillier_serialisation_params_t *serialisation_params);
 
 #endif
