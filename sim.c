@@ -71,7 +71,7 @@ int main(int argc, char *argv[]){
         
         // Either all or no arguments must be provided, error otherwise
         } else {
-            fprintf(stderr, "Incorrecct commandline usage!");
+            fprintf(stderr, "Incorrect commandline usage!");
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
 

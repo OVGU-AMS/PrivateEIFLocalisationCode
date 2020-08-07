@@ -2,8 +2,8 @@
 
 """
 
+import os
 import numpy as np
-
 
 
 # These may remain constant, use num_sensors and first_sensor_index to select the sensor subset
@@ -26,18 +26,24 @@ SENSOR_LOCATIONS = [np.array([5.0, 5.0]), # Normal
                     np.array([23.0, 23.0])]
 
 # Defaults when this file run
-TRACK_FILEPATH_DEFAULT = "../input/default_track1.txt"
-SENSOR_FILEPATH_BASE_DEFAULT = "../input/debug_sensor%d.txt"
-NUM_SIMS_DEFAULT = 100
-NUM_SENSORS_DEFAULT = 4
+TRACK_FILEPATH_DEFAULT = "input/debug_track1.txt"
+SENSOR_FILEPATH_BASE_DEFAULT = "input/debug_sim_%03d_sensor%d.txt"
+NUM_SIMS_DEFAULT = 1
 FIRST_SENSOR_INDEX_DEFAULT = 0
+NUM_SENSORS_DEFAULT = 4
 
 
 # generate inputs for a particular simulation setup
 def generate_sim_inputs(track_filepath, sensor_filepath_base, number_of_sims, first_sensor_index, number_of_sensors):
+    # Always run from top project folder, if currently in python folder, move up
+    dir_moved = False
+    if os.getcwd().endswith('python_scripts'):
+        os.chdir('../')
+        dir_moved = True
+
     for s in range(1, number_of_sims+1):
         track_f = open(track_filepath, 'r')
-        sensor_fs = [open(sensor_filepath_base % (s, i), 'w') for i in range(1, number_of_sensors+1)]
+        sensor_fs = [open(sensor_filepath_base % (s, str(i)), 'w') for i in range(1, number_of_sensors+1)]
         all_sensor_measurements = [[] for i in range(number_of_sensors)]
 
         timesteps = int(track_f.readline())
@@ -61,6 +67,11 @@ def generate_sim_inputs(track_filepath, sensor_filepath_base, number_of_sims, fi
         for i in range(number_of_sensors):
             sensor_fs[i].write('\n'.join(all_sensor_measurements[i]))
             sensor_fs[i].close()
+
+    # If directory was moved up, move it back down before ending
+    if dir_moved:
+        os.chdir('./python_scripts')
+
     return
 
 

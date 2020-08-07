@@ -5,7 +5,7 @@ import numpy as np
 
 # Defaults when this file is run
 TRACK_FILEPATH_DEFAULT = "../input/track1.txt"
-OUTPUT_FILEPATH_DEFAULT = "../output/encoding_nav001.txt"
+OUTPUT_FILEPATH_DEFAULT = "../output/encoding_nav006.txt"
 SENSOR_LOCATIONS_DEFAULT = [np.array([5.0, 5.0]), # Normal
                             np.array([40.0, 5.0]), 
                             np.array([5.0, 40.0]), 
@@ -34,8 +34,8 @@ def plot_sim(track_filepath, output_filepath, sensor_locations=None, num_sensors
     states = []
     covariances = []
 
-    with open("../input/track1.txt") as in_f:
-        with open("../output/encoding_nav001.txt") as out_f:
+    with open(track_filepath) as in_f:
+        with open(output_filepath) as out_f:
             t = int(in_f.readline())
             dim = int(in_f.readline())
             init_state = np.array([float(x) for x in in_f.readline().split()])
