@@ -60,6 +60,9 @@ def generate_sim_inputs(track_filepath, sensor_filepath_base, number_of_sims, fi
             gt = np.array([float(x) for x in track_f.readline().split()])
             for i in range(number_of_sensors):
                 m = h(gt, SENSOR_LOCATIONS[first_sensor_index+i]) + np.random.normal(0, np.sqrt(SENSOR_VARIANCE))
+                # Ensure distance measurements are non-negative
+                if m < 0:
+                    m = 0
                 all_sensor_measurements[i].append("%lf" % m)
 
 

@@ -43,7 +43,7 @@ def run_all(sim_repeats, do_measurement_gen, do_sim_run, do_sim_evaluate, do_plo
 
     # Timing test params
     timing_paillier_bitsizes_to_test = [512, 1024, 2048]
-    timing_sensors_to_test = 5
+    timing_sensors_to_test = 8
 
     # Distance test params
     layouts = ['normal', 'big', 'verybig', 'small']
