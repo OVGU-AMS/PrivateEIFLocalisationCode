@@ -11,10 +11,14 @@
 #include "sensor.h"
 #include "navigator.h"
 
+// Defaults when no input is given
+#define TRACK_FILEPATH "input/debug_track1.txt"
+#define NAV_FILEPATH "output/debug_nav_001.txt"
+#define SENSOR_FILEPATH_BASE "input/debug_sim_001_sensor%d.txt"
+
 
 // Local functions
 void check_mpi_error(int mpi_err, char *message);
-
 
 
 int main(int argc, char *argv[]){
@@ -50,8 +54,8 @@ int main(int argc, char *argv[]){
 
         // If no commandline argument initialise paillier and encoding with defaults
         if (argc == 1){
-            track_filepath = "input/debug_track1.txt";
-            output_filepath = "output/debug_nav1.txt";
+            track_filepath = TRACK_FILEPATH;
+            output_filepath = NAV_FILEPATH;
             encoding_params.mod_bits = ENCODING_MOD_BITS_DEFAULT;
             encoding_params.frac_bits = ENCODING_FRAC_BITS_DEFAULT;
             serialisation_params.paillier_bitsize = PAILLIER_BITSIZE_DEFAULT;
@@ -137,7 +141,7 @@ int main(int argc, char *argv[]){
 
         // If no commandline argument initialise paillier and encoding with defaults
         if (argc == 1){
-            sensor_filepath_base = "input/debug_sensor%d.txt";
+            sensor_filepath_base = SENSOR_FILEPATH_BASE;
             encoding_params.mod_bits = ENCODING_MOD_BITS_DEFAULT;
             encoding_params.frac_bits = ENCODING_FRAC_BITS_DEFAULT;
             serialisation_params.paillier_bitsize = PAILLIER_BITSIZE_DEFAULT;

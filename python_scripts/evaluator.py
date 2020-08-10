@@ -25,6 +25,7 @@ def create_sim_error_files(track_filepath, sim_output_filepath_base, error_outpu
     # Get and save all the errors of each simulation to the track file
     for i in range(1, num_simulations+1):
         errors = []
+        to_skip = False
         with open(track_filepath, 'r') as track_f:
             with open(sim_output_filepath_base % i, 'r') as sim_output_f:
 
@@ -35,14 +36,30 @@ def create_sim_error_files(track_filepath, sim_output_filepath_base, error_outpu
 
                 for t in range(timesteps):
                     gt = np.array([float(x) for x in track_f.readline().split()])
-                    est = np.array([float(x) for x in sim_output_f.readline().split()])
-                    est_cov = np.array([[float(x) for x in sim_output_f.readline().split()] for _ in range(dimension)])
+                    try:
+                        est = np.array([float(x) for x in sim_output_f.readline().split()])
+                        est_cov = np.array([[float(x) for x in sim_output_f.readline().split()] for _ in range(dimension)])
+                    except Exception as e:
+                        print("Could not interpret simulation output '%s'" % sim_output_f)
+                        to_skip = True
+                        break
+                    
+                    if np.allclose(est_cov, np.array([[0 for _ in range(dimension)] for _ in range(dimension)])):
+                        print("Covariance too close to zero! Assuming fault and skipping simulation '%s'" % sim_output_f)
+                        to_skip = True
+                        break
+
+                    if not all([e > 0 for e in np.linalg.eigvals(est_cov)]):
+                        print("Covariance has non-positive eigenvalues! Assuming fault and skipping simulation '%s'" % sim_output_f)
+                        to_skip = True
+                        break
 
                     # Compute and save the error
                     e = np.linalg.norm(gt - est)
                     errors.append(e)
 
-        all_errors.append(errors)
+        if not to_skip:
+            all_errors.append(errors)
 
     # Compute the mean error at each timestep
     mean_errors = []

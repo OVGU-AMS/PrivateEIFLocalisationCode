@@ -162,6 +162,7 @@ void run_sensor(int id, char *sensor_filepath_base, encoding_params_t *encoding_
     for (int t=0; t<time_steps; t++){
         // Get next measurement
         sensor_input_err_check(fscanf(measurements_fp, "%lf", &measurement), 1, "Could not read measurement!", id);
+        //printf("%d m=%lf\n", id, measurement);
 
         // Modified measurement for filter, adjusted to be zero-mean
         z = pow(measurement, 2) - SENSOR_VARIANCE;
