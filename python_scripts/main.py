@@ -11,15 +11,21 @@ import plotter
 SIM_REPEATS = 3
 
 # Which part of process to do
-DO_MEASUREMENT_GEN = True
-DO_SIM_RUN = True
-DO_SIM_EVALUATE = True
+DO_MEASUREMENT_GEN = False
+DO_SIM_RUN = False
+DO_SIM_EVALUATE = False
 DO_PLOT_CREATE = True
 
 # Which scenarios to run
 DO_ENCODING = True
 DO_TIMING = True
 DO_DISTANCE = True
+
+# Plot generation and defaults
+SAVE_NOT_SHOW_FIG = True
+SHOW_LATEX_FIG = True
+FIG_WIDTH_DEFAULT = 8
+FIG_HEIGHT_DEFAULT = 8
 
 # Generate measurements, run simulations, evaluate results, and plot results (or any subset of these)
 def run_all(sim_repeats, do_measurement_gen, do_sim_run, do_sim_evaluate, do_plot_create, do_encoding, do_timing, do_distance):
@@ -40,13 +46,21 @@ def run_all(sim_repeats, do_measurement_gen, do_sim_run, do_sim_evaluate, do_plo
 
     # Encoding test params
     encodings_to_test = [(64, 16), (128, 32), (256, 64)]
+    encoding_fig_width = FIG_WIDTH_DEFAULT
+    encoding_fig_height = FIG_HEIGHT_DEFAULT
 
     # Timing test params
-    timing_paillier_bitsizes_to_test = [512, 1024, 2048]
-    timing_sensors_to_test = 8
+    timing_paillier_bitsizes_to_test = [512, 1024, 1536, 2048, 2560]
+    min_timing_sensors_to_test = 2
+    max_timing_sensors_to_test = 5
+    timing_fig_width = FIG_WIDTH_DEFAULT
+    timing_fig_height = FIG_HEIGHT_DEFAULT
 
     # Distance test params
-    layouts = ['normal', 'big', 'verybig', 'small']
+    layouts = ['small', 'normal', 'big', 'verybig']
+    layout_labels = ['Small', 'Normal', 'Large', 'Very Large']    
+    layouts_fig_width = FIG_WIDTH_DEFAULT
+    layouts_fig_height = FIG_HEIGHT_DEFAULT
 
     """
     888b     d888                                                                                     888
@@ -65,18 +79,25 @@ def run_all(sim_repeats, do_measurement_gen, do_sim_run, do_sim_evaluate, do_plo
     if do_measurement_gen:
         # Genereate measurements for encoding plots
         if do_encoding:
-            generator.generate_sim_inputs("input/track1.txt", "input/encoding_sim_%03d_sensor%s.txt", sim_repeats, 0, 4)
+            print("Genereating measurements for encoding plot...")
+            for mod_bits, frac_bits in encodings_to_test:
+                generator.generate_sim_inputs("input/track1.txt", "input/encoding_" + str(mod_bits) + "_" + str(frac_bits) + "_sim_%03d_sensor%s.txt", sim_repeats, 0, 4)
 
         # Genereate measurements for timing plots
         if do_timing:
+            print("Genereating measurements for timing plot...")
             generator.generate_sim_inputs("input/track1.txt", "input/timing_sim_%03d_sensor%s.txt", sim_repeats, 0, 8)
 
         # Generate measurements for distance plots
         if do_distance:
+            print("Genereating measurements for distance/layout plot...")
             for i,layout in enumerate(layouts):
                 sensor_fpb = "input/layout_" + layout + "_sim_%03d_sensor%s.txt"
                 sensor_start_index = i*4
                 generator.generate_sim_inputs("input/track1.txt", sensor_fpb, sim_repeats, sensor_start_index, 4)
+
+        print("Finished genereating measurements.\n")
+
 
     """
     8888888b.                                  d8b
@@ -95,21 +116,24 @@ def run_all(sim_repeats, do_measurement_gen, do_sim_run, do_sim_evaluate, do_plo
     if do_sim_run:
         # Run all encoding sims
         if do_encoding:
+            print("Running simulations for encoding plot...")
             for mod_bits, frac_bits in encodings_to_test:
 
+                in_fpb = "input/encoding_" + str(mod_bits) + "_" + str(frac_bits) + "_sim_%03d_sensor%s.txt"
                 out_fpb = "output/encoding_" + str(mod_bits) + "_" + str(frac_bits) + "_nav_%03d.txt"
                 out_times_fp = "output/encoding_" + str(mod_bits) + "_" + str(frac_bits) + "_nav_times.txt"
 
                 runner.run_simulation_repeats("input/track1.txt",
-                                                "input/encoding_sim_%03d_sensor%s.txt",
+                                                in_fpb,
                                                 out_fpb,
                                                 out_times_fp,
                                                 4, 1024, mod_bits, frac_bits, sim_repeats)
 
         # Run all timing sims
         if do_timing:
+            print("Running simulations for timing plot...")
             for bitsize in timing_paillier_bitsizes_to_test:
-                for sensors in range(3, timing_sensors_to_test+1):
+                for sensors in range(min_timing_sensors_to_test, max_timing_sensors_to_test+1):
 
                     out_fpb = "output/timing_" + str(bitsize) + "_" + str(sensors) + "_nav_%03d.txt"
                     out_times_fp = "output/timing_" + str(bitsize) + "_" + str(sensors) + "_nav_times.txt"
@@ -121,6 +145,7 @@ def run_all(sim_repeats, do_measurement_gen, do_sim_run, do_sim_evaluate, do_plo
 
         # Run all distance sims
         if do_distance:
+            print("Running simulations for distance/layout plot...")
             for layout in layouts:
                 in_fpb = "input/layout_" + layout + "_sim_%03d_sensor%s.txt"
                 out_fpb = "output/layout_" + layout + "_nav_%03d.txt"
@@ -130,6 +155,9 @@ def run_all(sim_repeats, do_measurement_gen, do_sim_run, do_sim_evaluate, do_plo
                                                 out_fpb,
                                                 out_times_fp,
                                                 4, 1024, 128, 32, sim_repeats)
+
+        print("Finished running simulations.\n")
+
 
     """
      .d8888b.
@@ -148,6 +176,7 @@ def run_all(sim_repeats, do_measurement_gen, do_sim_run, do_sim_evaluate, do_plo
     if do_sim_evaluate:
         # Compute encoding errors
         if do_encoding:
+            print("Computing errors for encoding plot...")
             for mod_bits, frac_bits in encodings_to_test:
                 out_fpb = "output/encoding_" + str(mod_bits) + "_" + str(frac_bits) + "_nav_%03d.txt"
                 errout_fpb = "output_evaluation/encoding_" + str(mod_bits) + "_" + str(frac_bits) + "_nav_errors_%03d.txt"
@@ -156,20 +185,24 @@ def run_all(sim_repeats, do_measurement_gen, do_sim_run, do_sim_evaluate, do_plo
 
         # Compute timing errors
         if do_timing:
+            print("Computing errors for timing plot...")
             for bitsize in timing_paillier_bitsizes_to_test:
-                for sensors in range(3, timing_sensors_to_test+1):
+                for sensors in range(min_timing_sensors_to_test, max_timing_sensors_to_test+1):
                     out_fpb = "output/timing_" + str(bitsize) + "_" + str(sensors) + "_nav_%03d.txt"
                     errout_fpb = "output_evaluation/timing_" + str(bitsize) + "_" + str(sensors) + "_nav_errors_%03d.txt"
                     meanerrout_fp = "output_evaluation/timing_" + str(bitsize) + "_" + str(sensors) + "_nav_mean_errors.txt"
                     evaluator.create_sim_error_files("input/track1.txt", out_fpb, errout_fpb, meanerrout_fp, sim_repeats)
 
         # Compute distance errors
-        if do_timing:
+        if do_distance:
+            print("Computing errors for distance/layout plot...")
             for layout in layouts:
                 out_fpb = "output/layout_" + layout + "_nav_%03d.txt"
                 errout_fpb = "output_evaluation/layout_" + layout + "_nav_errors_%03d.txt"
                 meanerrout_fp = "output_evaluation/layout_" + layout + "_nav_mean_errors.txt"
                 evaluator.create_sim_error_files("input/track1.txt", out_fpb, errout_fpb, meanerrout_fp, sim_repeats)
+
+        print("Finished computing errors.\n")
 
     """
     8888888b.  888          888
@@ -185,7 +218,26 @@ def run_all(sim_repeats, do_measurement_gen, do_sim_run, do_sim_evaluate, do_plo
 
     """
 
-    print("TODO: plots")
+    if do_plot_create:
+        # Initialise matplotlib for plotting or showing
+        plotter.init_matplotlib_params(SAVE_NOT_SHOW_FIG, SHOW_LATEX_FIG)
+
+        # Make encoding plot
+        if do_encoding:
+            print("Making encoding plot...")
+            plotter.create_encoding_plots('output_evaluation/encoding_%d_%d_nav_mean_errors.txt', encodings_to_test, 50, encoding_fig_width, encoding_fig_height)
+
+        # making timing plot
+        if do_timing:
+            print("Making timing plot...")
+            plotter.create_timing_plots('output/timing_%d_%d_nav_times.txt', list(range(min_timing_sensors_to_test, max_timing_sensors_to_test+1)), timing_paillier_bitsizes_to_test, timing_fig_width, timing_fig_height)
+
+        # Make layout distance plot
+        if do_distance:
+            print("Making distance/layout plot...")
+            plotter.create_distance_plots('output_evaluation/layout_%s_nav_mean_errors.txt', layouts, layout_labels, 50, layouts_fig_width, layouts_fig_height)
+
+        print("Finished making plots.\n")
 
     return
 

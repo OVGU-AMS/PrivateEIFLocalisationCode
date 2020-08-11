@@ -7,7 +7,7 @@ import numpy as np
 
 # Defaults for when this file is run
 TRACK_FILEPATH_DEFAULT = "input/debug_track1.txt"
-SIM_OUTPUT_FILEPATH_BASE_DEFAULT = "output/debug__nav_%03d.txt"
+SIM_OUTPUT_FILEPATH_BASE_DEFAULT = "output/debug_nav_%03d.txt"
 ERROR_OUTPUT_FILEPATH_BASE_DEFAULT = "output_evaluation/debug_nav_errors_%03d.txt"
 MEAN_ERROR_OUTPUT_FILEPATH_DEFAULT = "output_evaluation/debug_nav_mean_errors.txt"
 NUM_SIMULATIONS_DEFAULT = 1
@@ -15,14 +15,15 @@ NUM_SIMULATIONS_DEFAULT = 1
 
 # Creates files for the errors of simulations, and the mean errors of repeated simulations
 def create_sim_error_files(track_filepath, sim_output_filepath_base, error_output_filepath_base, mean_error_output_filepath, num_simulations):
+
     # Always run from top project folder, if currently in python folder, move up
     dir_moved = False
     if os.getcwd().endswith('python_scripts'):
         os.chdir('../')
         dir_moved = True
 
-    all_errors = []
     # Get and save all the errors of each simulation to the track file
+    all_errors = []
     for i in range(1, num_simulations+1):
         errors = []
         to_skip = False
@@ -35,36 +36,43 @@ def create_sim_error_files(track_filepath, sim_output_filepath_base, error_outpu
                 init_cov = np.array([[float(x) for x in track_f.readline().split()] for _ in range(dimension)])
 
                 for t in range(timesteps):
+                    
+                    # Read ground truth from track file and estimate from navigation file
                     gt = np.array([float(x) for x in track_f.readline().split()])
                     try:
                         est = np.array([float(x) for x in sim_output_f.readline().split()])
                         est_cov = np.array([[float(x) for x in sim_output_f.readline().split()] for _ in range(dimension)])
-                    except Exception as e:
-                        print("Could not interpret simulation output '%s'" % sim_output_f)
-                        to_skip = True
-                        break
-                    
-                    if np.allclose(est_cov, np.array([[0 for _ in range(dimension)] for _ in range(dimension)])):
-                        print("Covariance too close to zero! Assuming fault and skipping simulation '%s'" % sim_output_f)
-                        to_skip = True
-                        break
 
-                    if not all([e > 0 for e in np.linalg.eigvals(est_cov)]):
-                        print("Covariance has non-positive eigenvalues! Assuming fault and skipping simulation '%s'" % sim_output_f)
-                        to_skip = True
-                        break
+                    # Empty file or not enough lines, the rest of the estimates are marked as Failed
+                    except Exception as e:
+                        print("Could not interpret estimate from output '%s'" % sim_output_f)
+                        errors.append('Failed')
+                        continue
+
+                    # May happen the first line is read but no values, mark it is Failed as well
+                    if len(est) == 0:
+                        errors.append('Failed')
+                        continue
 
                     # Compute and save the error
                     e = np.linalg.norm(gt - est)
                     errors.append(e)
 
-        if not to_skip:
-            all_errors.append(errors)
+        # Save all sim errors
+        all_errors.append(errors)
 
     # Compute the mean error at each timestep
     mean_errors = []
     for t in range(timesteps):
-        mean = np.mean([e[t] for e in all_errors])
+
+        # Handle failed values by ignoring them in the mean computation
+        vals = [e[t] for e in all_errors if type(e[t]) != str]
+
+        # If all Failed then mean Failed as well
+        if len(vals) == 0:
+            mean = 'Failed'
+        else:
+            mean = np.mean(vals)
         mean_errors.append(mean)
 
     assert(len(all_errors) == num_simulations)
