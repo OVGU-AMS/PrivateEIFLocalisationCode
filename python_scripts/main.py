@@ -2,13 +2,15 @@
 
 """
 
+import numpy as np
 import generator
 import runner
+import base_runner
 import evaluator
 import plotter
 
 # Process (gen., sim., eval., etc.) repeats 
-SIM_REPEATS = 3
+SIM_REPEATS = 50
 
 # Which part of process to do
 DO_MEASUREMENT_GEN = False
@@ -20,6 +22,10 @@ DO_PLOT_CREATE = True
 DO_ENCODING = True
 DO_TIMING = True
 DO_DISTANCE = True
+
+# EIF base simulations
+ENCODING_ONLY_EIF_BASE = False
+DISTANCE_ONLY_EIF_BASE = False
 
 # Plot generation and defaults
 SAVE_NOT_SHOW_FIG = True
@@ -44,8 +50,31 @@ def run_all(sim_repeats, do_measurement_gen, do_sim_run, do_sim_evaluate, do_plo
 
     """
 
+    # Shared params
+    sensor_locations = [np.array([5.0, 5.0]), # Normal
+                        np.array([40.0, 5.0]), 
+                        np.array([5.0, 40.0]), 
+                        np.array([40.0, 40.0]),
+                        np.array([-30.0, -30.0]), # Big
+                        np.array([75.0, -30.0]), 
+                        np.array([-30.0, 75.0]), 
+                        np.array([75.0, 75.0]),
+                        np.array([-65.0, -65.0]), # Very big 
+                        np.array([110.0, -65.0]), 
+                        np.array([-65.0, 110.0]), 
+                        np.array([110.0, 110.0]),
+                        np.array([-100.0, -100.0]), # Huge
+                        np.array([145.0, -100.0]), 
+                        np.array([-100.0, 145.0]), 
+                        np.array([145.0, 145.0]), 
+                        np.array([22.0, 22.0]), # Small
+                        np.array([23.0, 22.0]), 
+                        np.array([22.0, 23.0]), 
+                        np.array([23.0, 23.0]),]
+
     # Encoding test params
     encodings_to_test = [(64, 16), (128, 32), (256, 64)]
+    encoding_plot_eif_base = True
     encoding_fig_width = FIG_WIDTH_DEFAULT
     encoding_fig_height = FIG_HEIGHT_DEFAULT
 
@@ -57,8 +86,9 @@ def run_all(sim_repeats, do_measurement_gen, do_sim_run, do_sim_evaluate, do_plo
     timing_fig_height = FIG_HEIGHT_DEFAULT
 
     # Distance test params
-    layouts = ['small', 'normal', 'big', 'verybig']
-    layout_labels = ['Small', 'Normal', 'Large', 'Very Large']    
+    layouts = ['normal', 'big', 'verybig', 'huge', 'small']
+    layout_labels = ['Normal', 'Large', 'Quite Large', 'Very Large', 'Small']
+    layouts_plot_eif_base = True
     layouts_fig_width = FIG_WIDTH_DEFAULT
     layouts_fig_height = FIG_HEIGHT_DEFAULT
 
@@ -81,12 +111,12 @@ def run_all(sim_repeats, do_measurement_gen, do_sim_run, do_sim_evaluate, do_plo
         if do_encoding:
             print("Genereating measurements for encoding plot...")
             for mod_bits, frac_bits in encodings_to_test:
-                generator.generate_sim_inputs("input/track1.txt", "input/encoding_" + str(mod_bits) + "_" + str(frac_bits) + "_sim_%03d_sensor%s.txt", sim_repeats, 0, 4)
+                generator.generate_sim_inputs("input/track1.txt", "input/encoding_" + str(mod_bits) + "_" + str(frac_bits) + "_sim_%03d_sensor%s.txt", sim_repeats, sensor_locations, 0, 4)
 
         # Genereate measurements for timing plots
         if do_timing:
             print("Genereating measurements for timing plot...")
-            generator.generate_sim_inputs("input/track1.txt", "input/timing_sim_%03d_sensor%s.txt", sim_repeats, 0, 8)
+            generator.generate_sim_inputs("input/track1.txt", "input/timing_sim_%03d_sensor%s.txt", sim_repeats, sensor_locations, 0, 8)
 
         # Generate measurements for distance plots
         if do_distance:
@@ -94,7 +124,7 @@ def run_all(sim_repeats, do_measurement_gen, do_sim_run, do_sim_evaluate, do_plo
             for i,layout in enumerate(layouts):
                 sensor_fpb = "input/layout_" + layout + "_sim_%03d_sensor%s.txt"
                 sensor_start_index = i*4
-                generator.generate_sim_inputs("input/track1.txt", sensor_fpb, sim_repeats, sensor_start_index, 4)
+                generator.generate_sim_inputs("input/track1.txt", sensor_fpb, sim_repeats, sensor_locations, sensor_start_index, 4)
 
         print("Finished genereating measurements.\n")
 
@@ -123,11 +153,18 @@ def run_all(sim_repeats, do_measurement_gen, do_sim_run, do_sim_evaluate, do_plo
                 out_fpb = "output/encoding_" + str(mod_bits) + "_" + str(frac_bits) + "_nav_%03d.txt"
                 out_times_fp = "output/encoding_" + str(mod_bits) + "_" + str(frac_bits) + "_nav_times.txt"
 
-                runner.run_simulation_repeats("input/track1.txt",
-                                                in_fpb,
-                                                out_fpb,
-                                                out_times_fp,
-                                                4, 1024, mod_bits, frac_bits, sim_repeats)
+                if not ENCODING_ONLY_EIF_BASE:
+                    runner.run_simulation_repeats("input/track1.txt",
+                                                    in_fpb,
+                                                    out_fpb,
+                                                    out_times_fp,
+                                                    4, 1024, mod_bits, frac_bits, sim_repeats)
+
+            # Run the normal EIF on only on eof the inputs, since encoding isn't used in the normal filter
+            mod_bits, frac_bits = encodings_to_test[0]
+            in_eif_fpb = "input/encoding_" + str(mod_bits) + "_" + str(frac_bits) + "_sim_%03d_sensor%s.txt"
+            out_eif_fpb = "output/eif_encoding_" + str(mod_bits) + "_" + str(frac_bits) + "_nav_%03d.txt"
+            base_runner.run_normal_eif("input/track1.txt", in_eif_fpb, out_eif_fpb, sim_repeats, 4)
 
         # Run all timing sims
         if do_timing:
@@ -150,11 +187,16 @@ def run_all(sim_repeats, do_measurement_gen, do_sim_run, do_sim_evaluate, do_plo
                 in_fpb = "input/layout_" + layout + "_sim_%03d_sensor%s.txt"
                 out_fpb = "output/layout_" + layout + "_nav_%03d.txt"
                 out_times_fp = "output/layout_" + layout + "_nav_times.txt"
-                runner.run_simulation_repeats("input/track1.txt",
-                                                in_fpb,
-                                                out_fpb,
-                                                out_times_fp,
-                                                4, 1024, 128, 32, sim_repeats)
+                out_eif_fpb = "output/eif_layout_" + layout + "_nav_%03d.txt"
+
+                if not DISTANCE_ONLY_EIF_BASE:
+                    runner.run_simulation_repeats("input/track1.txt",
+                                                    in_fpb,
+                                                    out_fpb,
+                                                    out_times_fp,
+                                                    4, 1024, 128, 32, sim_repeats)
+
+                base_runner.run_normal_eif("input/track1.txt", in_fpb, out_eif_fpb, sim_repeats, 4)
 
         print("Finished running simulations.\n")
 
@@ -181,7 +223,16 @@ def run_all(sim_repeats, do_measurement_gen, do_sim_run, do_sim_evaluate, do_plo
                 out_fpb = "output/encoding_" + str(mod_bits) + "_" + str(frac_bits) + "_nav_%03d.txt"
                 errout_fpb = "output_evaluation/encoding_" + str(mod_bits) + "_" + str(frac_bits) + "_nav_errors_%03d.txt"
                 meanerrout_fp = "output_evaluation/encoding_" + str(mod_bits) + "_" + str(frac_bits) + "_nav_mean_errors.txt"
-                evaluator.create_sim_error_files("input/track1.txt", out_fpb, errout_fpb, meanerrout_fp, sim_repeats)
+
+                if not ENCODING_ONLY_EIF_BASE:
+                    evaluator.create_sim_error_files("input/track1.txt", out_fpb, errout_fpb, meanerrout_fp, sim_repeats)
+            
+            # Only one EIF was run on the first encoding settings, as they don't affect the normal filter
+            mod_bits, frac_bits = encodings_to_test[0]
+            out_eif_fpb = "output/eif_encoding_" + str(mod_bits) + "_" + str(frac_bits) + "_nav_%03d.txt"
+            errout_eif_fpb = "output_evaluation/eif_encoding_" + str(mod_bits) + "_" + str(frac_bits) + "_nav_errors_%03d.txt"
+            meanerrout_eif_fp = "output_evaluation/eif_encoding_" + str(mod_bits) + "_" + str(frac_bits) + "_nav_mean_errors.txt"
+            evaluator.create_sim_error_files("input/track1.txt", out_eif_fpb, errout_eif_fpb, meanerrout_eif_fp, sim_repeats)
 
         # Compute timing errors
         if do_timing:
@@ -200,7 +251,14 @@ def run_all(sim_repeats, do_measurement_gen, do_sim_run, do_sim_evaluate, do_plo
                 out_fpb = "output/layout_" + layout + "_nav_%03d.txt"
                 errout_fpb = "output_evaluation/layout_" + layout + "_nav_errors_%03d.txt"
                 meanerrout_fp = "output_evaluation/layout_" + layout + "_nav_mean_errors.txt"
-                evaluator.create_sim_error_files("input/track1.txt", out_fpb, errout_fpb, meanerrout_fp, sim_repeats)
+
+                out_eif_fpb = "output/eif_layout_" + layout + "_nav_%03d.txt"
+                errout_eif_fpb = "output_evaluation/eif_layout_" + layout + "_nav_errors_%03d.txt"
+                meanerrout_eif_fp = "output_evaluation/eif_layout_" + layout + "_nav_mean_errors.txt"
+
+                if not DISTANCE_ONLY_EIF_BASE:
+                    evaluator.create_sim_error_files("input/track1.txt", out_fpb, errout_fpb, meanerrout_fp, sim_repeats)
+                evaluator.create_sim_error_files("input/track1.txt", out_eif_fpb, errout_eif_fpb, meanerrout_eif_fp, sim_repeats)
 
         print("Finished computing errors.\n")
 
@@ -225,7 +283,12 @@ def run_all(sim_repeats, do_measurement_gen, do_sim_run, do_sim_evaluate, do_plo
         # Make encoding plot
         if do_encoding:
             print("Making encoding plot...")
-            plotter.create_encoding_plots('output_evaluation/encoding_%d_%d_nav_mean_errors.txt', encodings_to_test, 50, encoding_fig_width, encoding_fig_height)
+            if encoding_plot_eif_base:
+                plot_eif = 'output_evaluation/eif_encoding_%d_%d_nav_mean_errors.txt' % encodings_to_test[0]
+            else:
+                plot_eif = None
+
+            plotter.create_encoding_plots('output_evaluation/encoding_%d_%d_nav_mean_errors.txt', encodings_to_test, 50, encoding_fig_width, encoding_fig_height, plot_eif)
 
         # making timing plot
         if do_timing:
@@ -235,7 +298,12 @@ def run_all(sim_repeats, do_measurement_gen, do_sim_run, do_sim_evaluate, do_plo
         # Make layout distance plot
         if do_distance:
             print("Making distance/layout plot...")
-            plotter.create_distance_plots('output_evaluation/layout_%s_nav_mean_errors.txt', layouts, layout_labels, 50, layouts_fig_width, layouts_fig_height)
+            if layouts_plot_eif_base:
+                plot_eif = 'output_evaluation/eif_layout_%s_nav_mean_errors.txt'
+            else:
+                plot_eif = None
+
+            plotter.create_distance_plots('output_evaluation/layout_%s_nav_mean_errors.txt', layouts, layout_labels, 50, layouts_fig_width, layouts_fig_height, plot_eif)
 
         print("Finished making plots.\n")
 
