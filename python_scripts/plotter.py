@@ -163,17 +163,17 @@ def create_encoding_plots(output_filepath_base, encoding_types_list, sim_timeste
 
     return
 
-# 888                                          888
-# 888                                          888
-# 888                                          888
-# 888       8888b.  888  888  .d88b.  888  888 888888 .d8888b
-# 888          "88b 888  888 d88""88b 888  888 888    88K
-# 888      .d888888 888  888 888  888 888  888 888    "Y8888b.
-# 888      888  888 Y88b 888 Y88..88P Y88b 888 Y88b.       X88
-# 88888888 "Y888888  "Y88888  "Y88P"   "Y88888  "Y888  88888P'
-#                        888
-#                   Y8b d88P
-#                    "Y88P"
+# 8888888b.  d8b          888
+# 888  "Y88b Y8P          888
+# 888    888              888
+# 888    888 888 .d8888b  888888  8888b.  88888b.   .d8888b .d88b.  .d8888b
+# 888    888 888 88K      888        "88b 888 "88b d88P"   d8P  Y8b 88K
+# 888    888 888 "Y8888b. 888    .d888888 888  888 888     88888888 "Y8888b.
+# 888  .d88P 888      X88 Y88b.  888  888 888  888 Y88b.   Y8b.          X88
+# 8888888P"  888  88888P'  "Y888 "Y888888 888  888  "Y8888P "Y8888   88888P'
+
+
+
 
 def create_distance_plots(output_filepath_base, distance_layout_list, distance_layout_labels, sim_timesteps, width, height, eif_filepath_base):
 
@@ -245,7 +245,7 @@ def plot_layouts_and_track(track_filepath, sensor_lists, sensor_list_labels):
         dimenstions = int(track_f.readline())
         init_state = np.array([float(x) for x in track_f.readline().split()])
         init_cov = np.array([[float(x) for x in track_f.readline().split()] for _ in range(dimenstions)])
-        for t in range(timesteps):
+        for _ in range(timesteps):
             ground_truth.append(np.array([float(x) for x in track_f.readline().split()]))
 
     # Make subplots
@@ -260,7 +260,7 @@ def plot_layouts_and_track(track_filepath, sensor_lists, sensor_list_labels):
         s = ax.scatter([x[0] for x in sensor_lists[i]], [x[1] for x in sensor_lists[i]], marker='.', color='red')
         p, = ax.plot([x[0] for x in ground_truth], [x[2] for x in ground_truth])
         i_s = ax.scatter([init_state[0]], [init_state[2]], marker='.', color='orange')
-        i_c = ax.add_artist(get_cov_ellipse(np.array([[init_cov[0][0], init_cov[0][2]],[init_cov[2][0], init_cov[2][2]]]), 
+        ax.add_artist(get_cov_ellipse(np.array([[init_cov[0][0], init_cov[0][2]],[init_cov[2][0], init_cov[2][2]]]), 
                                         np.array([init_state[0],init_state[2]]), 
                                         2, fill=False, linestyle='-', edgecolor='orange', zorder=1))
 
@@ -351,7 +351,7 @@ def plot_sim(track_filepath, output_filepath, sensor_filepath_base=None, num_sen
         for i in range(1, num_sensors+1):
             with open(sensor_filepath_base % i) as sen_f:
                 t = int(sen_f.readline())
-                d = int(sen_f.readline())
+                sen_f.readline()
                 loc = np.array([float(x.strip()) for x in sen_f.readline().split()])
                 locs.append(loc)
 
