@@ -269,7 +269,7 @@ def plot_layouts_and_track(track_filepath, sensor_lists, sensor_list_labels):
         plots.append(p)
 
     # make legend
-    fig.legend((plots[0], i_s, scatters[0]), (r'Ground Truth', r'Initial State Estimate', r'Sensors'), loc='upper center')
+    fig.legend((plots[0], i_s, scatters[0]), (r'Ground Truth', r'Initial State Estimate', r'Sensors'), loc='upper center', ncol=3)
 
     plt.setp(axs[-1,:], xlabel=r'Location $x$ ($m$)')
     plt.setp(axs[:,0], ylabel=r'Location $y$ ($m$)')
