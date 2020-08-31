@@ -22,25 +22,24 @@
 
 
 
-void encode_from_dbl(mpz_t res, double x, unsigned int mults, encoding_params_t *encoding_params){
+void encode_from_dbl(mpz_t res, double x, unsigned int mults, mpz_t modulus, encoding_params_t *encoding_params){
     int sign = 0;
     unsigned int adj_frac_bits;
-    mpz_t mx_enc, frac_factor;
-    mpf_t scaled_x, mx_enc_f, frac_factor_f;
+    mpz_t frac_factor;
+    mpf_t scaled_x, frac_factor_f;
 
-    mpz_init(mx_enc);
+    // Inits
     mpz_init(frac_factor);
-
     mpf_init(scaled_x);
-    mpf_init(mx_enc_f);
     mpf_init(frac_factor_f);
 
+    // Make x positive
     if (x<0){
         sign = 1;
         x = -x;
     }
 
-    mpz_ui_pow_ui(mx_enc, 2, encoding_params->mod_bits);
+    // Compute scaling factor frac_factor for number of mults
     if (mults > 0){
         adj_frac_bits = (encoding_params->frac_bits)*(mults+1);
     } else {
@@ -48,25 +47,23 @@ void encode_from_dbl(mpz_t res, double x, unsigned int mults, encoding_params_t 
     }
     mpz_ui_pow_ui(frac_factor, 2, adj_frac_bits);
 
-    
+    // Scale x (as float and then convert to int)
     mpf_set_z(frac_factor_f, frac_factor);
     mpf_set_d(scaled_x, x);
     mpf_mul(scaled_x, frac_factor_f, scaled_x);
-
     mpz_set_f(res, scaled_x);
 
-    // res should always be less than mx_enc anyway (otherwise it's an encoding overflow)
-    mpz_mod(res, res, mx_enc);
+    // res should already be less than the modulus (otherwise it's an encoding overflow)
+    mpz_mod(res, res, modulus);
 
+    // Account for sign
     if (sign){
-        mpz_sub(res, mx_enc, res);
+        mpz_sub(res, modulus, res);
     }
 
-    mpz_clear(mx_enc);
+    // Frees
     mpz_clear(frac_factor);
-
     mpf_clear(scaled_x);
-    mpf_clear(mx_enc_f);
     mpf_clear(frac_factor_f);
 
     return;
@@ -84,55 +81,55 @@ void encode_from_dbl(mpz_t res, double x, unsigned int mults, encoding_params_t 
 
 
 
-double decode_to_dbl(mpz_t e, unsigned int mults, encoding_params_t *encoding_params){
+double decode_to_dbl(mpz_t e, unsigned int mults, mpz_t modulus, encoding_params_t *encoding_params){
     int sign = 0;
     unsigned int adj_frac_bits;
     double res;
-    mpz_t e_copy, mx_enc, mx_enc_hlf, frac_factor;
+    mpz_t e_mod, modulus_hlf, frac_factor;
     mpf_t e_f, frac_factor_f;
 
-    mpz_init(e_copy);
-    mpz_init(mx_enc);
-    mpz_init(mx_enc_hlf);
+    // Inits
+    mpz_init(e_mod);
+    mpz_init(modulus_hlf);
     mpz_init(frac_factor);
+    mpf_init(e_f);
+    mpf_init(frac_factor_f);
 
-    mpz_ui_pow_ui(mx_enc, 2, encoding_params->mod_bits);
-    mpz_ui_pow_ui(mx_enc_hlf, 2, (encoding_params->mod_bits)-1);
+    // Save half modulus
+    mpz_fdiv_q_ui(modulus_hlf, modulus, 2);
 
+    // Compute scaling factor frac_factor for number of mults
     if (mults > 0){
         adj_frac_bits = (encoding_params->frac_bits)*(mults+1);
     } else {
         adj_frac_bits = encoding_params->frac_bits;
     }
     mpz_ui_pow_ui(frac_factor, 2, adj_frac_bits);
-    
-    mpf_init(e_f);
-    mpf_init(frac_factor_f);
 
-    mpz_mod(e_copy, e, mx_enc);
+    // e should already be less than the modulus
+    mpz_mod(e_mod, e, modulus);
 
-    
-
-    if (mpz_cmp(e_copy, mx_enc_hlf) >= 0){
+    // Remove sign from encoding
+    if (mpz_cmp(e_mod, modulus_hlf) >= 0){
         sign = 1;
-        mpz_sub(e_copy, mx_enc, e_copy);
+        mpz_sub(e_mod, modulus, e_mod);
     }
 
+    // Compute value by converting to float and computing division
     mpf_set_z(frac_factor_f, frac_factor);
-    mpf_set_z(e_f, e_copy);
+    mpf_set_z(e_f, e_mod);
     mpf_div(e_f, e_f, frac_factor_f);
-
     res = mpf_get_d(e_f);
     
+    // Reapply sign to result
     if (sign){
         res = -res;
     }
 
-    mpz_clear(e_copy);
-    mpz_clear(mx_enc);
-    mpz_clear(mx_enc_hlf);
+    // Frees
+    mpz_clear(e_mod);
+    mpz_clear(modulus_hlf);
     mpz_clear(frac_factor);
-
     mpf_clear(e_f);
     mpf_clear(frac_factor_f);
 

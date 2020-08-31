@@ -73,7 +73,7 @@ def run_all(sim_repeats, do_measurement_gen, do_sim_run, do_sim_evaluate, do_plo
                         np.array([23.0, 23.0]),]
 
     # Encoding test params
-    encodings_to_test = [(64, 16), (128, 32), (256, 64)]
+    encodings_to_test = [8, 16, 32]
     encoding_plot_eif_base = True
     encoding_fig_width = FIG_WIDTH_DEFAULT
     encoding_fig_height = FIG_HEIGHT_DEFAULT
@@ -110,8 +110,8 @@ def run_all(sim_repeats, do_measurement_gen, do_sim_run, do_sim_evaluate, do_plo
         # Genereate measurements for encoding plots
         if do_encoding:
             print("Genereating measurements for encoding plot...")
-            for mod_bits, frac_bits in encodings_to_test:
-                generator.generate_sim_inputs("input/track1.txt", "input/encoding_" + str(mod_bits) + "_" + str(frac_bits) + "_sim_%03d_sensor%s.txt", sim_repeats, sensor_locations, 0, 4)
+            for frac_bits in encodings_to_test:
+                generator.generate_sim_inputs("input/track1.txt", "input/encoding_" + str(frac_bits) + "_sim_%03d_sensor%s.txt", sim_repeats, sensor_locations, 0, 4)
 
         # Genereate measurements for timing plots
         if do_timing:
@@ -147,23 +147,23 @@ def run_all(sim_repeats, do_measurement_gen, do_sim_run, do_sim_evaluate, do_plo
         # Run all encoding sims
         if do_encoding:
             print("Running simulations for encoding plot...")
-            for mod_bits, frac_bits in encodings_to_test:
+            for frac_bits in encodings_to_test:
 
-                in_fpb = "input/encoding_" + str(mod_bits) + "_" + str(frac_bits) + "_sim_%03d_sensor%s.txt"
-                out_fpb = "output/encoding_" + str(mod_bits) + "_" + str(frac_bits) + "_nav_%03d.txt"
-                out_times_fp = "output/encoding_" + str(mod_bits) + "_" + str(frac_bits) + "_nav_times.txt"
+                in_fpb = "input/encoding_" + str(frac_bits) + "_sim_%03d_sensor%s.txt"
+                out_fpb = "output/encoding_" + str(frac_bits) + "_nav_%03d.txt"
+                out_times_fp = "output/encoding_" + str(frac_bits) + "_nav_times.txt"
 
                 if not ENCODING_ONLY_EIF_BASE:
                     runner.run_simulation_repeats("input/track1.txt",
                                                     in_fpb,
                                                     out_fpb,
                                                     out_times_fp,
-                                                    4, 1024, mod_bits, frac_bits, sim_repeats)
+                                                    4, 1024, frac_bits, sim_repeats)
 
             # Run the normal EIF on only on eof the inputs, since encoding isn't used in the normal filter
-            mod_bits, frac_bits = encodings_to_test[0]
-            in_eif_fpb = "input/encoding_" + str(mod_bits) + "_" + str(frac_bits) + "_sim_%03d_sensor%s.txt"
-            out_eif_fpb = "output/eif_encoding_" + str(mod_bits) + "_" + str(frac_bits) + "_nav_%03d.txt"
+            frac_bits = encodings_to_test[0]
+            in_eif_fpb = "input/encoding_" + str(frac_bits) + "_sim_%03d_sensor%s.txt"
+            out_eif_fpb = "output/eif_encoding_" + str(frac_bits) + "_nav_%03d.txt"
             base_runner.run_normal_eif("input/track1.txt", in_eif_fpb, out_eif_fpb, sim_repeats, 4)
 
         # Run all timing sims
@@ -178,7 +178,7 @@ def run_all(sim_repeats, do_measurement_gen, do_sim_run, do_sim_evaluate, do_plo
                                                     "input/timing_sim_%03d_sensor%s.txt",
                                                     out_fpb,
                                                     out_times_fp,
-                                                    sensors, bitsize, 128, 32, sim_repeats)
+                                                    sensors, bitsize, 32, sim_repeats)
 
         # Run all distance sims
         if do_distance:
@@ -194,7 +194,7 @@ def run_all(sim_repeats, do_measurement_gen, do_sim_run, do_sim_evaluate, do_plo
                                                     in_fpb,
                                                     out_fpb,
                                                     out_times_fp,
-                                                    4, 1024, 128, 32, sim_repeats)
+                                                    4, 1024, 32, sim_repeats)
 
                 base_runner.run_normal_eif("input/track1.txt", in_fpb, out_eif_fpb, sim_repeats, 4)
 
@@ -219,19 +219,19 @@ def run_all(sim_repeats, do_measurement_gen, do_sim_run, do_sim_evaluate, do_plo
         # Compute encoding errors
         if do_encoding:
             print("Computing errors for encoding plot...")
-            for mod_bits, frac_bits in encodings_to_test:
-                out_fpb = "output/encoding_" + str(mod_bits) + "_" + str(frac_bits) + "_nav_%03d.txt"
-                errout_fpb = "output_evaluation/encoding_" + str(mod_bits) + "_" + str(frac_bits) + "_nav_errors_%03d.txt"
-                meanerrout_fp = "output_evaluation/encoding_" + str(mod_bits) + "_" + str(frac_bits) + "_nav_mean_errors.txt"
+            for frac_bits in encodings_to_test:
+                out_fpb = "output/encoding_" + str(frac_bits) + "_nav_%03d.txt"
+                errout_fpb = "output_evaluation/encoding_" + str(frac_bits) + "_nav_errors_%03d.txt"
+                meanerrout_fp = "output_evaluation/encoding_" + str(frac_bits) + "_nav_mean_errors.txt"
 
                 if not ENCODING_ONLY_EIF_BASE:
                     evaluator.create_sim_error_files("input/track1.txt", out_fpb, errout_fpb, meanerrout_fp, sim_repeats)
             
             # Only one EIF was run on the first encoding settings, as they don't affect the normal filter
-            mod_bits, frac_bits = encodings_to_test[0]
-            out_eif_fpb = "output/eif_encoding_" + str(mod_bits) + "_" + str(frac_bits) + "_nav_%03d.txt"
-            errout_eif_fpb = "output_evaluation/eif_encoding_" + str(mod_bits) + "_" + str(frac_bits) + "_nav_errors_%03d.txt"
-            meanerrout_eif_fp = "output_evaluation/eif_encoding_" + str(mod_bits) + "_" + str(frac_bits) + "_nav_mean_errors.txt"
+            frac_bits = encodings_to_test[0]
+            out_eif_fpb = "output/eif_encoding_" + str(frac_bits) + "_nav_%03d.txt"
+            errout_eif_fpb = "output_evaluation/eif_encoding_" + str(frac_bits) + "_nav_errors_%03d.txt"
+            meanerrout_eif_fp = "output_evaluation/eif_encoding_" + str(frac_bits) + "_nav_mean_errors.txt"
             evaluator.create_sim_error_files("input/track1.txt", out_eif_fpb, errout_eif_fpb, meanerrout_eif_fp, sim_repeats)
 
         # Compute timing errors
@@ -284,11 +284,11 @@ def run_all(sim_repeats, do_measurement_gen, do_sim_run, do_sim_evaluate, do_plo
         if do_encoding:
             print("Making encoding plot...")
             if encoding_plot_eif_base:
-                plot_eif = 'output_evaluation/eif_encoding_%d_%d_nav_mean_errors.txt' % encodings_to_test[0]
+                plot_eif = 'output_evaluation/eif_encoding_%d_nav_mean_errors.txt' % encodings_to_test[0]
             else:
                 plot_eif = None
 
-            plotter.create_encoding_plots('output_evaluation/encoding_%d_%d_nav_mean_errors.txt', encodings_to_test, 50, encoding_fig_width, encoding_fig_height, plot_eif)
+            plotter.create_encoding_plots('output_evaluation/encoding_%d_nav_mean_errors.txt', encodings_to_test, 50, encoding_fig_width, encoding_fig_height, plot_eif)
 
         # making timing plot
         if do_timing:

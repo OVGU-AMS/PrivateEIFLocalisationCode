@@ -20,7 +20,7 @@ ENCODING_FRAC_BITSIZE_DEFAULT = 32
 NUM_SIMULATIONS_DEFAULT = 1
 
 
-def run_simulation_repeats(track_filepath, sensor_filepath_base, output_filepath_base, runtimes_filepath, num_sensors, paillier_bitsize, encoding_mod_bitsize, encoding_frac_bitsize, num_simulations):
+def run_simulation_repeats(track_filepath, sensor_filepath_base, output_filepath_base, runtimes_filepath, num_sensors, paillier_bitsize, encoding_frac_bitsize, num_simulations):
     # Always run from top project folder, if currently in python folder, move up
     dir_moved = False
     if os.getcwd().endswith('python_scripts'):
@@ -35,7 +35,7 @@ def run_simulation_repeats(track_filepath, sensor_filepath_base, output_filepath
         sensors_fpb = sensor_filepath_base % (i, "%d")
 
         # Command
-        args = ['mpirun', '-np', str(num_sensors+1), 'build/sim', str(paillier_bitsize), str(encoding_mod_bitsize), str(encoding_frac_bitsize), out_fp, track_fp, sensors_fpb]
+        args = ['mpirun', '-np', str(num_sensors+1), 'build/sim', str(paillier_bitsize), str(encoding_frac_bitsize), out_fp, track_fp, sensors_fpb]
         print("Running simulation %d:" % i, ' '.join(args))
 
         # Run simulation

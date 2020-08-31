@@ -140,7 +140,7 @@ def create_encoding_plots(output_filepath_base, encoding_types_list, sim_timeste
                 mean_errors = [float(x.strip()) if x.strip() != 'Failed' else -1 for x in encoding_f.read().split()]
 
         encoding_errors[encoding] = mean_errors
-        ax.plot([0.5*x for x in list(range(sim_timesteps))], mean_errors, label=r'Modulus: %d, Fractional bits: %d' % encoding)
+        ax.plot([0.5*x for x in list(range(sim_timesteps))], mean_errors, label=r'Fractional bits: %d' % encoding)
 
     # Plot the normal EIF
     if eif_filepath != None:

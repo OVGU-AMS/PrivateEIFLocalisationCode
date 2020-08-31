@@ -169,7 +169,7 @@ void refresh_encryption(pubkey_t *pubkey, ciphertext_t *dst, ciphertext_t *src){
 // Encode and encrypt a float, given public key and number of multiplications for encoding
 void encode_and_enc(pubkey_t *pubkey, ciphertext_t *res, double a, unsigned int mults, encoding_params_t *encoding_params){
     paillier_plaintext_t *p = paillier_plaintext_from_ui(0);
-    encode_from_dbl(p->m, a, mults, encoding_params);
+    encode_from_dbl(p->m, a, mults, pubkey->n, encoding_params);
     paillier_enc(res, pubkey, p, paillier_get_rand_devurandom);
     paillier_freeplaintext(p);
 }
@@ -177,7 +177,7 @@ void encode_and_enc(pubkey_t *pubkey, ciphertext_t *res, double a, unsigned int 
 // Encode and put g to power of encoding mod N^2 (encrypt without noise term)
 void encode_and_enc_no_noise(pubkey_t *pubkey, ciphertext_t *res, double a, unsigned int mults, encoding_params_t *encoding_params){
     paillier_plaintext_t *p = paillier_plaintext_from_ui(0);
-    encode_from_dbl(p->m, a, mults, encoding_params);
+    encode_from_dbl(p->m, a, mults, pubkey->n, encoding_params);
     mpz_powm(res->c, pubkey->n_plusone, p->m, pubkey->n_squared);
     paillier_freeplaintext(p);
 }
@@ -186,13 +186,13 @@ void encode_and_enc_no_noise(pubkey_t *pubkey, ciphertext_t *res, double a, unsi
 double dec_and_decode(pubkey_t *pubkey, prvkey_t *prvkey, ciphertext_t *ct, unsigned int mults, encoding_params_t *encoding_params){
     paillier_plaintext_t *p = paillier_plaintext_from_ui(0);
     paillier_dec(p, pubkey, prvkey, ct);
-    return decode_to_dbl(p->m, mults, encoding_params);
+    return decode_to_dbl(p->m, mults, pubkey->n, encoding_params);
 }
 
 // Encode value and multipy given encryption by it
 void encode_and_mult_enc(pubkey_t *pubkey, ciphertext_t *res, ciphertext_t *ct, double a, unsigned int mults, encoding_params_t *encoding_params){
     paillier_plaintext_t *p = paillier_plaintext_from_ui(0);
-    encode_from_dbl(p->m, a, mults, encoding_params);
+    encode_from_dbl(p->m, a, mults, pubkey->n, encoding_params);
     paillier_exp(pubkey, res, ct, p);
     paillier_freeplaintext(p);
 }

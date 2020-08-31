@@ -56,7 +56,6 @@ int main(int argc, char *argv[]){
         if (argc == 1){
             track_filepath = TRACK_FILEPATH;
             output_filepath = NAV_FILEPATH;
-            encoding_params.mod_bits = ENCODING_MOD_BITS_DEFAULT;
             encoding_params.frac_bits = ENCODING_FRAC_BITS_DEFAULT;
             serialisation_params.paillier_bitsize = PAILLIER_BITSIZE_DEFAULT;
             serialisation_params.paillier_max_key_serialisation_chars = PAILLIER_MAX_KEY_SERIALISATION_CHARS_DEFAULT;
@@ -65,10 +64,9 @@ int main(int argc, char *argv[]){
         // If arguments provided, use them instead
         } else if (argc == 7){
             serialisation_params.paillier_bitsize = atoi(argv[1]);
-            encoding_params.mod_bits = atoi(argv[2]);
-            encoding_params.frac_bits = atoi(argv[3]);
-            output_filepath = argv[4];
-            track_filepath = argv[5];
+            encoding_params.frac_bits = atoi(argv[2]);
+            output_filepath = argv[3];
+            track_filepath = argv[4];
 
             serialisation_params.paillier_max_key_serialisation_chars = (serialisation_params.paillier_bitsize/2) + 1;
             serialisation_params.paillier_max_enc_serialisation_chars = (serialisation_params.paillier_bitsize/2) + 1;
@@ -142,7 +140,6 @@ int main(int argc, char *argv[]){
         // If no commandline argument initialise paillier and encoding with defaults
         if (argc == 1){
             sensor_filepath_base = SENSOR_FILEPATH_BASE;
-            encoding_params.mod_bits = ENCODING_MOD_BITS_DEFAULT;
             encoding_params.frac_bits = ENCODING_FRAC_BITS_DEFAULT;
             serialisation_params.paillier_bitsize = PAILLIER_BITSIZE_DEFAULT;
             serialisation_params.paillier_max_key_serialisation_chars = PAILLIER_MAX_KEY_SERIALISATION_CHARS_DEFAULT;
@@ -151,9 +148,8 @@ int main(int argc, char *argv[]){
         // If arguments provided, use them instead
         } else if (argc == 7){
             serialisation_params.paillier_bitsize = atoi(argv[1]);
-            encoding_params.mod_bits = atoi(argv[2]);
-            encoding_params.frac_bits = atoi(argv[3]);
-            sensor_filepath_base = argv[6];
+            encoding_params.frac_bits = atoi(argv[2]);
+            sensor_filepath_base = argv[5];
             
             serialisation_params.paillier_max_key_serialisation_chars = (serialisation_params.paillier_bitsize/2) + 1;
             serialisation_params.paillier_max_enc_serialisation_chars = (serialisation_params.paillier_bitsize/2) + 1;
