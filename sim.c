@@ -62,7 +62,7 @@ int main(int argc, char *argv[]){
             serialisation_params.paillier_max_enc_serialisation_chars = PAILLIER_MAX_ENC_SERIALISATION_CHARS_DEFAULT;
         
         // If arguments provided, use them instead
-        } else if (argc == 7){
+        } else if (argc == 6){
             serialisation_params.paillier_bitsize = atoi(argv[1]);
             encoding_params.frac_bits = atoi(argv[2]);
             output_filepath = argv[3];
@@ -146,7 +146,7 @@ int main(int argc, char *argv[]){
             serialisation_params.paillier_max_enc_serialisation_chars = PAILLIER_MAX_ENC_SERIALISATION_CHARS_DEFAULT;
         
         // If arguments provided, use them instead
-        } else if (argc == 7){
+        } else if (argc == 6){
             serialisation_params.paillier_bitsize = atoi(argv[1]);
             encoding_params.frac_bits = atoi(argv[2]);
             sensor_filepath_base = argv[5];
