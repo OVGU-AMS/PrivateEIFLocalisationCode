@@ -1,3 +1,10 @@
 .vscode/*
 build/*
 python_scripts/__pycache__/*.pyc
+
+input/*
+input/!debug*
+output/*
+output/!debug*
+output_evaluation/*
+output_evaluation/!debug*

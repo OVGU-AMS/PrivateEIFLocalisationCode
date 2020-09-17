@@ -10,7 +10,7 @@ import evaluator
 import plotter
 
 # Process (gen., sim., eval., etc.) repeats 
-SIM_REPEATS = 50
+SIM_REPEATS = 5
 
 # Which part of process to do
 DO_MEASUREMENT_GEN = False
@@ -20,8 +20,8 @@ DO_PLOT_CREATE = True
 
 # Which scenarios to run
 DO_ENCODING = True
-DO_TIMING = True
-DO_DISTANCE = True
+DO_TIMING = False
+DO_DISTANCE = False
 
 # EIF base simulations
 ENCODING_ONLY_EIF_BASE = False

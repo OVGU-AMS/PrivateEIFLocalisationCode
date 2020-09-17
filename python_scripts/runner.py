@@ -15,7 +15,6 @@ OUTPUT_FILEPATH_BASE_DEFAULT = "output/debug_nav_%03d.txt"
 RUNTIME_OUTPUT_FILEPATH_DEFAULT = "output/debug_nav_times.txt"
 NUM_SENSORS_DEFAULT = 4
 PAILLIER_BITSIZE_DEFAULT = 1024
-ENCODING_MOD_BITSIZE_DEFAULT = 128
 ENCODING_FRAC_BITSIZE_DEFAULT = 32
 NUM_SIMULATIONS_DEFAULT = 1
 
@@ -75,6 +74,5 @@ if __name__ == '__main__':
                             RUNTIME_OUTPUT_FILEPATH_DEFAULT, 
                             NUM_SENSORS_DEFAULT,
                             PAILLIER_BITSIZE_DEFAULT, 
-                            ENCODING_MOD_BITSIZE_DEFAULT, 
                             ENCODING_FRAC_BITSIZE_DEFAULT, 
                             NUM_SIMULATIONS_DEFAULT)
