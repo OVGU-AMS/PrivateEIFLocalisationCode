@@ -20,8 +20,8 @@ DO_PLOT_CREATE = True
 
 # Which scenarios to run
 DO_ENCODING = True
-DO_TIMING = False
-DO_DISTANCE = False
+DO_TIMING = True
+DO_DISTANCE = True
 
 # EIF base simulations
 ENCODING_ONLY_EIF_BASE = False

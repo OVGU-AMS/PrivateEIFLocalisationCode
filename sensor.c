@@ -169,7 +169,7 @@ void run_sensor(int id, char *sensor_filepath_base, encoding_params_t *encoding_
 
         // TODO noise approx may be doable better (overestimate for better consistency?)
         // Measreument noise of the adjusted measreument, approximated by using measurement for distance
-        inv_R_adj = 1.0/(2*(2*(pow(measurement, 2))*SENSOR_VARIANCE + pow(SENSOR_VARIANCE, 2)));
+        inv_R_adj = 1.0/(2*(2*(pow(measurement + 2*sqrt(SENSOR_VARIANCE), 2))*SENSOR_VARIANCE + pow(SENSOR_VARIANCE, 2)));
 
         // Get all state variable encryption broadcasts x,x2,x3,y,xy,x2y,y2,xy2,y3
         get_all_bcast_state_vars(&enc_state, enc_str, serialisation_params);
