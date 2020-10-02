@@ -19,7 +19,7 @@ DO_SIM_EVALUATE = False
 DO_PLOT_CREATE = True
 
 # Which scenarios to run
-DO_ENCODING = True
+DO_ENCODING = False
 DO_TIMING = True
 DO_DISTANCE = True
 
@@ -28,10 +28,9 @@ ENCODING_ONLY_EIF_BASE = False
 DISTANCE_ONLY_EIF_BASE = False
 
 # Plot generation and defaults
-SAVE_NOT_SHOW_FIG = False
+SAVE_NOT_SHOW_FIG = True
 SHOW_LATEX_FIG = True
-FIG_WIDTH_DEFAULT = 8
-FIG_HEIGHT_DEFAULT = 8
+FIG_WIDTH_DEFAULT = 2.95
 
 # Generate measurements, run simulations, evaluate results, and plot results (or any subset of these)
 def run_all(sim_repeats, do_measurement_gen, do_sim_run, do_sim_evaluate, do_plot_create, do_encoding, do_timing, do_distance):
@@ -76,21 +75,18 @@ def run_all(sim_repeats, do_measurement_gen, do_sim_run, do_sim_evaluate, do_plo
     encodings_to_test = [8, 16, 32]
     encoding_plot_eif_base = True
     encoding_fig_width = FIG_WIDTH_DEFAULT
-    encoding_fig_height = FIG_HEIGHT_DEFAULT
 
     # Timing test params
     timing_paillier_bitsizes_to_test = [512, 1024, 1536, 2048, 2560]
     min_timing_sensors_to_test = 2
     max_timing_sensors_to_test = 5
     timing_fig_width = FIG_WIDTH_DEFAULT
-    timing_fig_height = FIG_HEIGHT_DEFAULT
 
     # Distance test params
-    layouts = ['normal', 'big', 'verybig', 'huge', 'small']
-    layout_labels = ['Normal', 'Large', 'Quite Large', 'Very Large', 'Small']
+    layouts = ['normal', 'big', 'verybig', 'huge']
+    layout_labels = ['Normal', 'Large', 'Quite Large', 'Very Large']
     layouts_plot_eif_base = True
     layouts_fig_width = FIG_WIDTH_DEFAULT
-    layouts_fig_height = FIG_HEIGHT_DEFAULT
 
     """
     888b     d888                                                                                     888
@@ -288,12 +284,12 @@ def run_all(sim_repeats, do_measurement_gen, do_sim_run, do_sim_evaluate, do_plo
             else:
                 plot_eif = None
 
-            plotter.create_encoding_plots('output_evaluation/encoding_%d_nav_mean_errors.txt', encodings_to_test, 50, encoding_fig_width, encoding_fig_height, plot_eif)
+            plotter.create_encoding_plots('output_evaluation/encoding_%d_nav_mean_errors.txt', encodings_to_test, 50, encoding_fig_width, plot_eif)
 
         # making timing plot
         if do_timing:
             print("Making timing plot...")
-            plotter.create_timing_plots('output/timing_%d_%d_nav_times.txt', list(range(min_timing_sensors_to_test, max_timing_sensors_to_test+1)), timing_paillier_bitsizes_to_test, timing_fig_width, timing_fig_height)
+            plotter.create_timing_plots('output/timing_%d_%d_nav_times.txt', list(range(min_timing_sensors_to_test, max_timing_sensors_to_test+1)), timing_paillier_bitsizes_to_test, timing_fig_width)
 
         # Make layout distance plot
         if do_distance:
@@ -303,7 +299,7 @@ def run_all(sim_repeats, do_measurement_gen, do_sim_run, do_sim_evaluate, do_plo
             else:
                 plot_eif = None
 
-            plotter.create_distance_plots('output_evaluation/layout_%s_nav_mean_errors.txt', layouts, layout_labels, 50, layouts_fig_width, layouts_fig_height, plot_eif)
+            plotter.create_distance_plots('output_evaluation/layout_%s_nav_mean_errors.txt', layouts, layout_labels, 50, layouts_fig_width, plot_eif)
 
         print("Finished making plots.\n")
 
