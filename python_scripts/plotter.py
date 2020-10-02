@@ -221,7 +221,7 @@ def create_distance_plots(output_filepath_base, distance_layout_list, distance_l
                     mean_errors = [float(x.strip()) if x.strip() != 'Failed' else -1 for x in eif_distance_f.read().split()]
 
             layout_errors[layout] = mean_errors
-            ph, = ax.plot([0.5*x for x in list(range(sim_timesteps))], mean_errors, label=r'%s (EIF)' % distance_layout_labels[i])
+            ph, = ax.plot([0.5*x for x in list(range(sim_timesteps))], mean_errors, label=r'%s (EIF)' % distance_layout_labels[i], linestyle='--')
             plot_handles.append(ph)
 
     ax.set_xlabel(r'Simulation Time ($s$)', fontsize=fontsize)
@@ -274,7 +274,7 @@ def plot_layouts_and_track(track_filepath, sensor_lists, sensor_list_labels):
     # Specific sizing for Automatica format
     fontsize = 9
     subplot_adj_h_spacing = 0.3
-    subplots_adj_top = 0.68
+    subplots_adj_top = 0.86
     height = 6.5
     width = 2.95
 
