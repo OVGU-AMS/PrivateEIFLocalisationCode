@@ -104,7 +104,7 @@ def create_timing_plots(output_times_filepath_base, sensor_count_list, bitsize_l
     ax.set_xticks(sensor_count_list)
     ax.tick_params(labelsize=fontsize)
 
-    leg = fig.legend(handles=plot_handles, title='Encryption Bit Length', loc='upper center', fontsize=fontsize, ncol=3)
+    leg = fig.legend(handles=plot_handles, title='Encryption Scheme Bit Length', loc='upper center', fontsize=fontsize, ncol=3)
     #plt.setp(leg.get_title(), multialignment='center')
 
     if matplotlib.get_backend() == 'pgf':
@@ -212,7 +212,7 @@ def create_distance_plots(output_filepath_base, distance_layout_list, distance_l
                 mean_errors = [float(x.strip()) if x.strip() != 'Failed' else -1 for x in distance_f.read().split()]
 
         layout_errors[layout] = mean_errors
-        ph, = ax.plot([0.5*x for x in list(range(sim_timesteps))], mean_errors, label=r'%s' % distance_layout_labels[i])
+        ph, = ax.plot([x for x in list(range(sim_timesteps))], mean_errors, label=r'%s' % distance_layout_labels[i])
         plot_handles.append(ph)
 
     if eif_filepath_base != None:
@@ -221,10 +221,10 @@ def create_distance_plots(output_filepath_base, distance_layout_list, distance_l
                     mean_errors = [float(x.strip()) if x.strip() != 'Failed' else -1 for x in eif_distance_f.read().split()]
 
             layout_errors[layout] = mean_errors
-            ph, = ax.plot([0.5*x for x in list(range(sim_timesteps))], mean_errors, label=r'%s (EIF)' % distance_layout_labels[i], linestyle='--')
+            ph, = ax.plot([x for x in list(range(sim_timesteps))], mean_errors, label=r'%s (EIF)' % distance_layout_labels[i], linestyle='--')
             plot_handles.append(ph)
 
-    ax.set_xlabel(r'Simulation Time ($s$)', fontsize=fontsize)
+    ax.set_xlabel(r'Filter Iterations', fontsize=fontsize)
     ax.set_ylabel(r'Average Simulation Error ($m$)', fontsize=fontsize)
     ax.tick_params(labelsize=fontsize)
 

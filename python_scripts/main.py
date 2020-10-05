@@ -84,7 +84,7 @@ def run_all(sim_repeats, do_measurement_gen, do_sim_run, do_sim_evaluate, do_plo
 
     # Distance test params
     layouts = ['normal', 'big', 'verybig', 'huge']
-    layout_labels = ['Normal', 'Large', 'Quite Large', 'Very Large']
+    layout_labels = ['Normal', 'Big', 'Quite Big', 'Very Big']
     layouts_plot_eif_base = True
     layouts_fig_width = FIG_WIDTH_DEFAULT
 
