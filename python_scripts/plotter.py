@@ -26,6 +26,10 @@ ADDITIONAL_SENSOR_LOCATIONS_DEFAULT = []
 
 
 def init_matplotlib_params(save_not_show_fig, show_latex_fig):
+    fontsize = 9
+    linewidth = 1.0
+    gridlinewidth = 0.7
+
     if save_not_show_fig:
         matplotlib.use("pgf")
 
@@ -34,7 +38,17 @@ def init_matplotlib_params(save_not_show_fig, show_latex_fig):
             "pgf.texsystem": "pdflatex",   
             'font.family': 'serif',         # Use serif/main font for text elements
             'text.usetex': True,            # Use inline maths for ticks
-            'pgf.rcfonts': False            # Don't setup fonts from matplotlib rc params
+            'pgf.rcfonts': False,           # Don't setup fonts from matplotlib rc params
+            'font.size': fontsize,
+            'axes.titlesize': fontsize,
+            'axes.labelsize': fontsize,
+            'xtick.labelsize': fontsize,
+            'ytick.labelsize': fontsize,
+            'legend.fontsize': fontsize,
+            'figure.titlesize': fontsize,
+            # line width
+            'lines.linewidth': linewidth,
+            'grid.linewidth': gridlinewidth
         })
     return
 
@@ -64,7 +78,6 @@ def create_timing_plots(output_times_filepath_base, sensor_count_list, bitsize_l
     bitsize_list.sort(reverse=True)
 
     # Specific sizing for Automatica format
-    fontsize = 9
     subplot_adj_left = 0.175
     subplot_adj_bottom = 0.175
     # Together height and top padding are set to have picture height 0.77*3.09 = 2.38 inches (with enough space for legend above)
@@ -75,6 +88,8 @@ def create_timing_plots(output_times_filepath_base, sensor_count_list, bitsize_l
     fig.set_size_inches(w=width, h=height)
     ax = fig.add_subplot(111)
     plt.subplots_adjust(left=subplot_adj_left, bottom=subplot_adj_bottom, top=subplot_adj_top)
+    plt.gca().grid(linestyle='dashed')
+    plt.gca().set_axisbelow(True)
 
     sensor_counts = {}
     for s in sensor_count_list:
@@ -99,12 +114,11 @@ def create_timing_plots(output_times_filepath_base, sensor_count_list, bitsize_l
         ph, = ax.plot(sensor_count_list, [sensor_counts[i][b] for i in sensor_count_list], marker='x', label=r'%d' % bitsize_list[b])
         plot_handles.append(ph)
 
-    ax.set_xlabel(r'Number of sensors', fontsize=fontsize)
-    ax.set_ylabel(r'Runtime ($s$)', fontsize=fontsize)
+    ax.set_xlabel(r'Number of sensors')
+    ax.set_ylabel(r'Runtime ($s$)')
     ax.set_xticks(sensor_count_list)
-    ax.tick_params(labelsize=fontsize)
 
-    leg = fig.legend(handles=plot_handles, title='Encryption Scheme Bit Length', loc='upper center', fontsize=fontsize, ncol=3)
+    leg = fig.legend(handles=plot_handles, title='Encryption Scheme Key Length (bits)', loc='upper center', ncol=3)
     #plt.setp(leg.get_title(), multialignment='center')
 
     if matplotlib.get_backend() == 'pgf':
@@ -193,7 +207,6 @@ def create_distance_plots(output_filepath_base, distance_layout_list, distance_l
         dir_moved = True
 
     # Specific sizing for Automatica format
-    fontsize = 9
     subplot_adj_left = 0.175
     subplot_adj_bottom = 0.175
     # Together height and top padding are set to have picture height 0.68*3.5 = 2.38 inches (with enough space for legend above)
@@ -204,6 +217,8 @@ def create_distance_plots(output_filepath_base, distance_layout_list, distance_l
     fig.set_size_inches(w=width, h=height)
     ax = fig.add_subplot(111)
     plt.subplots_adjust(left=subplot_adj_left, bottom=subplot_adj_bottom, top=subplot_adj_top)
+    plt.gca().grid(linestyle='dashed')
+    plt.gca().set_axisbelow(True)
 
     plot_handles = []
     layout_errors = {}
@@ -224,11 +239,10 @@ def create_distance_plots(output_filepath_base, distance_layout_list, distance_l
             ph, = ax.plot([x for x in list(range(sim_timesteps))], mean_errors, label=r'%s (EIF)' % distance_layout_labels[i], linestyle='--')
             plot_handles.append(ph)
 
-    ax.set_xlabel(r'Filter Iterations', fontsize=fontsize)
-    ax.set_ylabel(r'Average Simulation Error ($m$)', fontsize=fontsize)
-    ax.tick_params(labelsize=fontsize)
+    ax.set_xlabel(r'Filter Iterations')
+    ax.set_ylabel(r'Average Simulation Error ($m$)')
 
-    fig.legend(handles=plot_handles, title='Layout', loc='upper center', fontsize=fontsize, ncol=2)
+    fig.legend(handles=plot_handles, title='Layout', loc='upper center', ncol=2)
 
     if matplotlib.get_backend() == 'pgf':
         plt.savefig('pictures/layout_errors.pdf')
@@ -272,7 +286,6 @@ def plot_layouts_and_track(track_filepath, sensor_lists, sensor_list_labels):
             ground_truth.append(np.array([float(x) for x in track_f.readline().split()]))
 
     # Specific sizing for Automatica format
-    fontsize = 9
     subplot_adj_h_spacing = 0.3
     subplots_adj_top = 0.86
     height = 6.5
@@ -286,9 +299,8 @@ def plot_layouts_and_track(track_filepath, sensor_lists, sensor_list_labels):
     scatters = []
     for i,ax in enumerate(axs.flat):
 
-        ax.set_title(sensor_list_labels[i], fontsize=fontsize)
+        ax.set_title(sensor_list_labels[i])
         ax.set_aspect(aspect='equal')
-        ax.tick_params(labelsize=fontsize)
 
         # Plot sensor positions and groundtruth
         s = ax.scatter([x[0] for x in sensor_lists[i]], [x[1] for x in sensor_lists[i]], marker='.', color='red')
@@ -303,11 +315,11 @@ def plot_layouts_and_track(track_filepath, sensor_lists, sensor_list_labels):
         plots.append(p)
 
     # make legend
-    fig.legend((plots[0], i_s, scatters[0]), (r'Ground Truth', r'Initial State Estimate', r'Sensors'), loc='upper center', ncol=1, fontsize=fontsize)
+    fig.legend((plots[0], i_s, scatters[0]), (r'Ground Truth', r'Initial State Estimate', r'Sensors'), loc='upper center', ncol=1)
 
     # Place axis labels independently, made to fit Automatica column format
-    fig.text(0.5, 0.04, r'Location $x$ ($m$)', ha='center', fontsize=fontsize)
-    fig.text(0.11, 0.5, r'Location $y$ ($m$)', va='center', rotation='vertical', fontsize=fontsize)
+    fig.text(0.5, 0.04, r'Location $x$ ($m$)', ha='center')
+    fig.text(0.11, 0.5, r'Location $y$ ($m$)', va='center', rotation='vertical')
 
     # Hide ticks from intermediate axes
     for a in axs[:-1]:
