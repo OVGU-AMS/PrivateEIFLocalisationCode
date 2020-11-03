@@ -240,7 +240,7 @@ def create_distance_plots(output_filepath_base, distance_layout_list, distance_l
             plot_handles.append(ph)
 
     ax.set_xlabel(r'Filter Iterations')
-    ax.set_ylabel(r'Average Simulation Error ($m$)')
+    ax.set_ylabel(r'Average Simulation Error')
 
     fig.legend(handles=plot_handles, title='Layout', loc='upper center', ncol=2)
 
@@ -318,8 +318,8 @@ def plot_layouts_and_track(track_filepath, sensor_lists, sensor_list_labels):
     fig.legend((plots[0], i_s, scatters[0]), (r'Ground Truth', r'Initial State Estimate', r'Sensors'), loc='upper center', ncol=1)
 
     # Place axis labels independently, made to fit Automatica column format
-    fig.text(0.5, 0.04, r'Location $x$ ($m$)', ha='center')
-    fig.text(0.11, 0.5, r'Location $y$ ($m$)', va='center', rotation='vertical')
+    fig.text(0.5, 0.04, r'Location $x$', ha='center')
+    fig.text(0.11, 0.5, r'Location $y$', va='center', rotation='vertical')
 
     # Hide ticks from intermediate axes
     for a in axs[:-1]:

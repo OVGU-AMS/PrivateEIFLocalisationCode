@@ -10,7 +10,7 @@ import evaluator
 import plotter
 
 # Process (gen., sim., eval., etc.) repeats 
-SIM_REPEATS = 5
+SIM_REPEATS = 100
 
 # Which part of process to do
 DO_MEASUREMENT_GEN = False
