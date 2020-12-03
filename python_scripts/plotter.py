@@ -285,15 +285,13 @@ def plot_layouts_and_track(track_filepath, sensor_lists, sensor_list_labels):
         for _ in range(timesteps):
             ground_truth.append(np.array([float(x) for x in track_f.readline().split()]))
 
-    # Specific sizing for Automatica format
-    subplot_adj_h_spacing = 0.3
-    subplots_adj_top = 0.86
-    height = 6.5
+    # Specific sizing
+    height = 3.5
     width = 2.95
 
     # Make subplots. Special sizes to accomodate Automatica column width
-    fig, axs = plt.subplots(4,1, figsize=(width, height), sharex=True, sharey=True)
-    plt.subplots_adjust(hspace=subplot_adj_h_spacing, top=subplots_adj_top)
+    fig, axs = plt.subplots(2,2, figsize=(width, height), sharex=True, sharey=True)
+    plt.subplots_adjust(wspace=-0.1, hspace=0.4, top=0.7, bottom=0.18, left=0.18, right=0.91)
 
     plots = []
     scatters = []
@@ -318,12 +316,16 @@ def plot_layouts_and_track(track_filepath, sensor_lists, sensor_list_labels):
     fig.legend((plots[0], i_s, scatters[0]), (r'Ground Truth', r'Initial State Estimate', r'Sensors'), loc='upper center', ncol=1)
 
     # Place axis labels independently, made to fit Automatica column format
-    fig.text(0.5, 0.04, r'Location $x$', ha='center')
-    fig.text(0.11, 0.5, r'Location $y$', va='center', rotation='vertical')
+    fig.text(0.5, 0.03, r'Location $x$', ha='center')
+    fig.text(0.03, 0.5, r'Location $y$', va='center', rotation='vertical')
 
     # Hide ticks from intermediate axes
-    for a in axs[:-1]:
+    for a in [axs[0][0], axs[0][1]]:
         a.tick_params(labelcolor='none', bottom=False)
+
+    # Hide ticks from intermediate axes
+    for a in [axs[0][1], axs[1][1]]:
+        a.tick_params(labelcolor='none', left=False)
 
     # Save
     if matplotlib.get_backend() == 'pgf':
