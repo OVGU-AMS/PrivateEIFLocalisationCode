@@ -91,6 +91,9 @@ int main(int argc, char *argv[]){
         // Broadcast Paillier key
         dist_phe_key(num_sensors, pubkey, &serialisation_params);
 
+        // Debug - Broadcast Paillier private key
+        dist_phe_prv_key(num_sensors, prvkey, &serialisation_params);
+
         // Distributed aggregation keys
         dist_agg_keys(num_sensors, aggkeys, aggkey_strs, agg_requests, &serialisation_params);
 

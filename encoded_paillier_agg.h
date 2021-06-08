@@ -43,6 +43,8 @@ void agg_key_gen(pubkey_t *pubkey, int participants, aggkey_t *key_array);
 
 void serialise_pubkey(pubkey_t *pubkey, char *buffer);
 pubkey_t* deserialise_pubkey(char *key_serialisation);
+void serialise_prvkey(prvkey_t *prvkey, char *buffer);
+prvkey_t* deserialise_prvkey(pubkey_t *pubkey, char *key_serialisation);
 void serialise_aggkey(aggkey_t aggkey, char *buffer);
 void deserialise_aggkey(aggkey_t aggkey, char *aggkey_serialisation);
 void serialise_encryption(ciphertext_t *ct, char *buffer);

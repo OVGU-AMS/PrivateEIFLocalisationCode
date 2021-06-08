@@ -32,6 +32,7 @@ void run_sensor(int id, char *sensor_filepath_base, encoding_params_t *encoding_
     // Key vars
     char *key_str;
     pubkey_t *pubkey;
+    prvkey_t *prvkey; // Debug
     aggkey_t agg_key;
 
     // Measurements file var
@@ -83,6 +84,11 @@ void run_sensor(int id, char *sensor_filepath_base, encoding_params_t *encoding_
     // Get Paillier public key
     MPI_Bcast(key_str, serialisation_params->paillier_max_key_serialisation_chars, MPI_CHAR, 0, MPI_COMM_WORLD);
     pubkey = deserialise_pubkey(key_str);
+    //fprintf(stderr, "id: %d, key: %s\n", id, key_str);
+
+    // Debug - Get Paillier public key
+    MPI_Bcast(key_str, serialisation_params->paillier_max_key_serialisation_chars, MPI_CHAR, 0, MPI_COMM_WORLD);
+    prvkey = deserialise_prvkey(pubkey, key_str);
     //fprintf(stderr, "id: %d, key: %s\n", id, key_str);
 
     // Get sensor's private aggregation key

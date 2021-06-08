@@ -79,6 +79,18 @@ pubkey_t* deserialise_pubkey(char *key_serialisation){
     return paillier_pubkey_from_hex(key_serialisation);
 }
 
+// Debug - Serialisation of paillier public key for MPI communication
+// Does not allocate buffer
+void serialise_prvkey(prvkey_t *prvkey, char *buffer){
+    mpz_get_str(buffer, SERIALISATION_BASE, prvkey->lambda);
+}
+
+// Debug - Deserialisation of paillier public key for MPI communcation
+// Allocates pubkey
+prvkey_t* deserialise_prvkey(pubkey_t *pubkey, char *key_serialisation){
+    return paillier_prvkey_from_hex(key_serialisation, pubkey);
+}
+
 // Serialisation of aggregation private key for MPI communication
 // Does not allocates buffer
 void serialise_aggkey(aggkey_t aggkey, char *buffer){
