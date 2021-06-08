@@ -1,5 +1,5 @@
 CC = mpicc
-CFLAGS= -g -Wall -O2
+CFLAGS= -g -Wall
 LIBS = -lgmp -lgsl -lgslcblas -lm -lcrypto
 
 PHEFOLDER = libpaillier-0.8

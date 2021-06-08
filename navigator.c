@@ -116,7 +116,7 @@ void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int num_sensors, char *tr
             nav_input_err_check(fscanf(track_fp, "%lf", gsl_matrix_ptr(covariance, i, j)), 1, "Could not read inital covariance value from track file!");
         }
     }
-    fprintf(stderr, "Initial state and covariance:\n");
+    fprintf(stderr, "Initial state and covariance\n");
     print_gsl_vector(state, dimension);
     print_gsl_matrix(covariance, dimension, dimension);
     fprintf(stderr, "\n");
@@ -265,9 +265,9 @@ void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int num_sensors, char *tr
 
         // Output estimated location
         fprintf(stderr, "time: %d\n", t);
-        fprintf(stderr, "State:\n");
+        fprintf(stderr, "State\n");
         print_gsl_vector(state, dimension);
-        fprintf(stderr, "Covariance:\n");
+        fprintf(stderr, "Covariance\n");
         print_gsl_matrix(covariance, dimension, dimension);
         fprintf(output_fp, "%lf %lf %lf %lf\n", gsl_vector_get(state, 0), gsl_vector_get(state, 1), gsl_vector_get(state, 2), gsl_vector_get(state, 3));
         fprintf(output_fp, "%lf %lf %lf %lf\n", gsl_matrix_get(covariance, 0, 0), gsl_matrix_get(covariance, 0, 1), gsl_matrix_get(covariance, 0, 2), gsl_matrix_get(covariance, 0, 3));
