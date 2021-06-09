@@ -9,6 +9,7 @@
 void init_filter_model(gsl_matrix *F, gsl_matrix *Q);
 void broadcast_all_enc_state_vars(pubkey_t *pubkey, ciphertext_t *ct, char *enc_str, gsl_vector *state, encoding_params_t *encoding_params, paillier_serialisation_params_t *serialisation_params);
 void broadcast_enc_state_var(pubkey_t *pubkey, ciphertext_t *ct, char *enc_str, double val, encoding_params_t *encoding_params, paillier_serialisation_params_t *serialisation_params);
+void print_all_enc_state_vars(gsl_vector *state);
 void get_enc_str_from_sensor(int src_sensor, int rows, int cols, char *enc_strs, int send_tag, MPI_Request *r, paillier_serialisation_params_t *serialisation_params);
 void reset_recieved_flags(int *received_flags, int num_sensors, int *first_received);
 int are_all_received(int *received_flags, int num_sensors);
@@ -205,6 +206,9 @@ void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int num_sensors, char *tr
         // Encrypt and broadcast the state variables
         broadcast_all_enc_state_vars(pubkey, state_enc, enc_str, state, encoding_params, serialisation_params);
 
+        // Debugging
+        print_all_enc_state_vars(state);
+
         // Async receive of all hrh and hrz matrices from all sensors
         for (int s=0; s<num_sensors; s++){
             get_enc_str_from_sensor(s+1, dimension, dimension, hrh_enc_strs[s], 0, hrh_requests+s, serialisation_params);
@@ -246,10 +250,10 @@ void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int num_sensors, char *tr
         // Decrypt the summed sensor matrices and vectors
         decrypt_mtrx(pubkey, prvkey, enc_hrh_sum, hrh_sum, 1, encoding_params);
         decrypt_vctr(pubkey, prvkey, enc_hrz_sum, hrz_sum, 1, encoding_params);
-        // fprintf(stderr, "Matrix sum:\n");
-        // print_gsl_matrix(hrh_sum, dimension, dimension);
-        // fprintf(stderr, "Vector sum:\n");
-        // print_gsl_vector(hrz_sum, dimension);
+        fprintf(stderr, "Matrix sum:\n");
+        print_gsl_matrix(hrh_sum, dimension, dimension);
+        fprintf(stderr, "Vector sum:\n");
+        print_gsl_vector(hrz_sum, dimension);
 
         // Filter update step, convert to information filter form then back
         gsl_linalg_LU_decomp(covariance, perm, &sig_num);
@@ -394,6 +398,19 @@ void broadcast_all_enc_state_vars(pubkey_t *pubkey, ciphertext_t *ct, char *enc_
     broadcast_enc_state_var(pubkey, ct, enc_str, pow(gsl_vector_get(state, 2), 3), encoding_params, serialisation_params);
 }
 
+// Debugging - Print the state variables x,x2,x3,y,xy,x2y,y2,xy2,y3 in that order
+void print_all_enc_state_vars(gsl_vector *state){
+    fprintf(stderr, "id: %d sending x = %lf\n", 0, gsl_vector_get(state, 0));
+    fprintf(stderr, "id: %d sending x2 = %lf\n", 0, pow(gsl_vector_get(state, 0), 2));
+    fprintf(stderr, "id: %d sending x3 = %lf\n", 0, pow(gsl_vector_get(state, 0), 3));
+    fprintf(stderr, "id: %d sending y = %lf\n", 0, gsl_vector_get(state, 2));
+    fprintf(stderr, "id: %d sending xy = %lf\n", 0, gsl_vector_get(state, 0)*gsl_vector_get(state, 2));
+    fprintf(stderr, "id: %d sending x2y = %lf\n", 0, pow(gsl_vector_get(state, 0), 2)*gsl_vector_get(state, 2));
+    fprintf(stderr, "id: %d sending y2 = %lf\n", 0, pow(gsl_vector_get(state, 2), 2));
+    fprintf(stderr, "id: %d sending xy2 = %lf\n", 0, gsl_vector_get(state, 0)*pow(gsl_vector_get(state, 2), 2));
+    fprintf(stderr, "id: %d sending y3 = %lf\n", 0, pow(gsl_vector_get(state, 2), 3));
+}
+
 // Encrypt serialise and broadcast a state variable
 void broadcast_enc_state_var(pubkey_t *pubkey, ciphertext_t *ct, char *enc_str, double val, encoding_params_t *encoding_params, paillier_serialisation_params_t *serialisation_params){
     encode_and_enc(pubkey, ct, val, 0, encoding_params);
@@ -446,6 +463,7 @@ void poll_sensor_and_aggregate(pubkey_t *pubkey,
         if (test_request){
             *received_flag = 1;
             get_c_mtrx_from_enc_str(enc_mat, dim1, dim2, enc_mat_str, serialisation_params);
+            fprintf(stderr, "Received enc\n");
 
             // If it's the first sensor to send initialise the sum with it's matrix
             if (!*first_received_flag){
