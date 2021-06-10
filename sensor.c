@@ -46,7 +46,7 @@ void run_sensor(int id, char *sensor_filepath_base, encoding_params_t *encoding_
     // Key vars
     char *key_str;
     pubkey_t *pubkey;
-    prvkey_t *prvkey; // Debugging
+    // prvkey_t *prvkey; // Debugging
     aggkey_t agg_key;
 
     // Measurements file var
@@ -66,15 +66,15 @@ void run_sensor(int id, char *sensor_filepath_base, encoding_params_t *encoding_
     // Encrypted state info vars
     char *enc_str;
     enc_state_info_t enc_state;
-    state_info_t state; // Debugging
+    // state_info_t state; // Debugging
 
     // Result vars
     c_mtrx_t *hrh;
     c_mtrx_t *hrz;
     ciphertext_t *mat_elem;
     ciphertext_t *partial_sum;
-    gsl_vector *plain_hrz; // Debugging
-    gsl_matrix *plain_hrh; // Debugging
+    // gsl_vector *plain_hrz; // Debugging
+    // gsl_matrix *plain_hrh; // Debugging
 
     // Sending vars
     char *hrh_enc_strs;
@@ -100,18 +100,17 @@ void run_sensor(int id, char *sensor_filepath_base, encoding_params_t *encoding_
     // Get Paillier public key
     MPI_Bcast(key_str, serialisation_params->paillier_max_key_serialisation_chars, MPI_CHAR, 0, MPI_COMM_WORLD);
     pubkey = deserialise_pubkey(key_str);
-    fprintf(stderr, "id: %d, pubkey: %s\n", id, key_str);
+    // fprintf(stderr, "id: %d, pubkey: %s\n", id, key_str); // Debugging
 
     // Debugging - Get Paillier private key
-    MPI_Bcast(key_str, serialisation_params->paillier_max_key_serialisation_chars, MPI_CHAR, 0, MPI_COMM_WORLD);
-    prvkey = deserialise_prvkey(pubkey, key_str);
-    fprintf(stderr, "id: %d, prvkey: %s\n", id, key_str);
+    // MPI_Bcast(key_str, serialisation_params->paillier_max_key_serialisation_chars, MPI_CHAR, 0, MPI_COMM_WORLD);
+    // prvkey = deserialise_prvkey(pubkey, key_str);
+    // fprintf(stderr, "id: %d, prvkey: %s\n", id, key_str); // Debugging
 
-    // Get sensor's private aggregation key
+    // Get sensor's private aggregation key (blocking)
     MPI_Recv(key_str, serialisation_params->paillier_max_key_serialisation_chars, MPI_CHAR, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-    fprintf(stderr, "id: %d, agg key str: %s\n", id, key_str);
+    // fprintf(stderr, "id: %d, agg key str: %s\n", id, key_str); // Debugging
     deserialise_aggkey(agg_key, key_str);
-    //gmp_fprintf(stderr, "id: %d, agg key: %Zd\n", id, agg_key);
 
     // Free the key mpi buffer as it's no longer needed
     free(key_str);
@@ -162,8 +161,8 @@ void run_sensor(int id, char *sensor_filepath_base, encoding_params_t *encoding_
     hrz_enc_strs = (char *)malloc(state_dim*(serialisation_params->paillier_max_enc_serialisation_chars)*sizeof(char));
 
     // Debugging - Alloc for plaintext matrix and vector
-    plain_hrz = gsl_vector_alloc(state_dim);
-    plain_hrh = gsl_matrix_alloc(state_dim, state_dim);
+    // plain_hrz = gsl_vector_alloc(state_dim);
+    // plain_hrh = gsl_matrix_alloc(state_dim, state_dim);
 
     // Initialise repeated sends
     MPI_Send_init(hrh_enc_strs, state_dim*state_dim*(serialisation_params->paillier_max_enc_serialisation_chars), MPI_CHAR, 0, 0, MPI_COMM_WORLD, &hrh_request);
@@ -200,8 +199,7 @@ void run_sensor(int id, char *sensor_filepath_base, encoding_params_t *encoding_
         // Get all state variable encryption broadcasts x,x2,x3,y,xy,x2y,y2,xy2,y3
         get_all_bcast_state_vars(&enc_state, enc_str, serialisation_params);
 
-        // Debugging
-        get_and_print_all_bcast_state_vars(id, pubkey, prvkey, &enc_state, &state, encoding_params);
+        // get_and_print_all_bcast_state_vars(id, pubkey, prvkey, &enc_state, &state, encoding_params); // Debugging
 
         // 888    888 8888888b.  888    888
         // 888    888 888   Y88b 888    888
@@ -216,7 +214,7 @@ void run_sensor(int id, char *sensor_filepath_base, encoding_params_t *encoding_
 
 
         // hrh[0][0] = (4*invRadj)*x2 + (-8*invRadj*sx)*x + (4*invRadj*sx**2)
-        fprintf(stderr, "id: %d (float) h[0][0] = %lf\n", id, (4*inv_R_adj)*state.x2 + (-8*inv_R_adj*loc_x)*state.x + (4*inv_R_adj*pow(loc_x,2))); // Debugging
+        // fprintf(stderr, "id: %d (float) h[0][0] = %lf\n", id, (4*inv_R_adj)*state.x2 + (-8*inv_R_adj*loc_x)*state.x + (4*inv_R_adj*pow(loc_x,2))); // Debugging
         mat_elem = get_c_mtrx(hrh, 0, 0);
         encode_and_mult_enc(pubkey, mat_elem, enc_state.x2, 4*inv_R_adj, 0, encoding_params);
         encode_mult_then_add(pubkey, mat_elem, partial_sum, enc_state.x, -8*inv_R_adj*loc_x, encoding_params);
@@ -224,7 +222,7 @@ void run_sensor(int id, char *sensor_filepath_base, encoding_params_t *encoding_
         refresh_encryption(pubkey, mat_elem, mat_elem);
 
         // hrh[0][2] = (4*invRadj)*xy + (-4*invRadj*sy)*x + (-4*invRadj*sx)*y + (4*invRadj*sx*sy)
-        fprintf(stderr, "id: %d (float) h[0][2] = %lf\n", id, (4*inv_R_adj)*state.xy + (-4*inv_R_adj*loc_y)*state.x + (-4*inv_R_adj*loc_x)*state.y + (4*inv_R_adj*loc_x*loc_y)); // Debugging
+        // fprintf(stderr, "id: %d (float) h[0][2] = %lf\n", id, (4*inv_R_adj)*state.xy + (-4*inv_R_adj*loc_y)*state.x + (-4*inv_R_adj*loc_x)*state.y + (4*inv_R_adj*loc_x*loc_y)); // Debugging
         mat_elem = get_c_mtrx(hrh, 0, 2);
         encode_and_mult_enc(pubkey, mat_elem, enc_state.xy, 4*inv_R_adj, 0, encoding_params);
         encode_mult_then_add(pubkey, mat_elem, partial_sum, enc_state.x, -4*inv_R_adj*loc_y, encoding_params);
@@ -233,13 +231,13 @@ void run_sensor(int id, char *sensor_filepath_base, encoding_params_t *encoding_
         refresh_encryption(pubkey, mat_elem, mat_elem);
 
         // hrh[2][0] = (4*invRadj)*xy + (-4*invRadj*sy)*x + (-4*invRadj*sx)*y + (4*invRadj*sx*sy)
-        fprintf(stderr, "id: %d (float) h[2][0] = %lf\n", id, (4*inv_R_adj)*state.xy + (-4*inv_R_adj*loc_y)*state.x + (-4*inv_R_adj*loc_x)*state.y + (4*inv_R_adj*loc_x*loc_y)); // Debugging
+        // fprintf(stderr, "id: %d (float) h[2][0] = %lf\n", id, (4*inv_R_adj)*state.xy + (-4*inv_R_adj*loc_y)*state.x + (-4*inv_R_adj*loc_x)*state.y + (4*inv_R_adj*loc_x*loc_y)); // Debugging
         mat_elem = get_c_mtrx(hrh, 2, 0);
         copy_encryption(mat_elem, get_c_mtrx(hrh, 0, 2));
         refresh_encryption(pubkey, mat_elem, mat_elem);
 
         // hrh[2][2] = (4*invRadj)*y2 + (-8*invRadj*sy)*y + (4*invRadj*sy**2)
-        fprintf(stderr, "id: %d (float) h[2][2] = %lf\n", id, (4*inv_R_adj)*state.y2 + (-8*inv_R_adj*loc_y)*state.y + (4*inv_R_adj*pow(loc_y,2))); // Debugging
+        // fprintf(stderr, "id: %d (float) h[2][2] = %lf\n", id, (4*inv_R_adj)*state.y2 + (-8*inv_R_adj*loc_y)*state.y + (4*inv_R_adj*pow(loc_y,2))); // Debugging
         mat_elem = get_c_mtrx(hrh, 2, 2);
         encode_and_mult_enc(pubkey, mat_elem, enc_state.y2, 4*inv_R_adj, 0, encoding_params);
         encode_mult_then_add(pubkey, mat_elem, partial_sum, enc_state.y, -8*inv_R_adj*loc_y, encoding_params);
@@ -276,9 +274,9 @@ void run_sensor(int id, char *sensor_filepath_base, encoding_params_t *encoding_
         // hrz[0] = (2*invRadj*z)*x + (-2*invRadj*sx*z) + (-2*invRadj*sx**2)*x + (2*invRadj*sx**3) + 
         //          (-2*invRadj*sy**2)*x + (2*invRadj*sx*sy**2) + (2*invRadj)*x3 + (-2*invRadj*sx)*x2 + 
         //          (2*invRadj)*xy2 + (-2*invRadj*sx)*y2
-        fprintf(stderr, "id: %d (float) h[0] = %lf\n", id, (2*inv_R_adj*z)*state.x + (-2*inv_R_adj*loc_x*z) + (-2*inv_R_adj*pow(loc_x,2))*state.x + (2*inv_R_adj*pow(loc_x,3)) 
-                                                    + (-2*inv_R_adj*pow(loc_y,2))*state.x + (2*inv_R_adj*loc_x*pow(loc_y,2)) + (2*inv_R_adj)*state.x3 + (-2*inv_R_adj*loc_x)*state.x2
-                                                    + (2*inv_R_adj)*state.xy2 + (-2*inv_R_adj*loc_x)*state.y2); // Debugging
+        // fprintf(stderr, "id: %d (float) h[0] = %lf\n", id, (2*inv_R_adj*z)*state.x + (-2*inv_R_adj*loc_x*z) + (-2*inv_R_adj*pow(loc_x,2))*state.x + (2*inv_R_adj*pow(loc_x,3)) 
+        //                                             + (-2*inv_R_adj*pow(loc_y,2))*state.x + (2*inv_R_adj*loc_x*pow(loc_y,2)) + (2*inv_R_adj)*state.x3 + (-2*inv_R_adj*loc_x)*state.x2
+        //                                             + (2*inv_R_adj)*state.xy2 + (-2*inv_R_adj*loc_x)*state.y2); // Debugging
         mat_elem = get_c_mtrx(hrz, 0, 0);
         encode_and_mult_enc(pubkey, mat_elem, enc_state.x, 2*inv_R_adj*z, 0, encoding_params);
         encode_then_add(pubkey, mat_elem, partial_sum, -2*inv_R_adj*loc_x*z, encoding_params);
@@ -295,9 +293,9 @@ void run_sensor(int id, char *sensor_filepath_base, encoding_params_t *encoding_
         // hrz[2] = (2*invRadj*z)*y + (-2*invRadj*sy*z) + (-2*invRadj*sx**2)*y + (2*invRadj*sy*sx**2) + 
         //          (-2*invRadj*sy**2)*y + (2*invRadj*sy**3) + (2*invRadj)*x2y + (-2*invRadj*sy)*x2 + 
         //          (2*invRadj)*y3 + (-2*invRadj*sy)*y2
-        fprintf(stderr, "id: %d (float) h[2] = %lf\n", id, (2*inv_R_adj*z)*state.y + (-2*inv_R_adj*loc_y*z) + (-2*inv_R_adj*pow(loc_x,2))*state.y + (2*inv_R_adj*loc_y*pow(loc_x,2)) 
-                                                    + (-2*inv_R_adj*pow(loc_y,2))*state.y + (2*inv_R_adj*pow(loc_y,3)) + (2*inv_R_adj)*state.x2y + (-2*inv_R_adj*loc_y)*state.x2
-                                                    + (2*inv_R_adj)*state.y3 + (-2*inv_R_adj*loc_y)*state.y2); // Debugging
+        // fprintf(stderr, "id: %d (float) h[2] = %lf\n", id, (2*inv_R_adj*z)*state.y + (-2*inv_R_adj*loc_y*z) + (-2*inv_R_adj*pow(loc_x,2))*state.y + (2*inv_R_adj*loc_y*pow(loc_x,2)) 
+        //                                             + (-2*inv_R_adj*pow(loc_y,2))*state.y + (2*inv_R_adj*pow(loc_y,3)) + (2*inv_R_adj)*state.x2y + (-2*inv_R_adj*loc_y)*state.x2
+        //                                             + (2*inv_R_adj)*state.y3 + (-2*inv_R_adj*loc_y)*state.y2); // Debugging
         mat_elem = get_c_mtrx(hrz, 0, 2);
         encode_and_mult_enc(pubkey, mat_elem, enc_state.y, 2*inv_R_adj*z, 0, encoding_params);
         encode_then_add(pubkey, mat_elem, partial_sum, -2*inv_R_adj*loc_y*z, encoding_params);
@@ -317,16 +315,16 @@ void run_sensor(int id, char *sensor_filepath_base, encoding_params_t *encoding_
         refresh_encryption(pubkey, get_c_mtrx(hrz, 0, 3), mat_elem);
 
         // Debugging
-        decrypt_mtrx(pubkey, prvkey, hrh, plain_hrh, 1, encoding_params);
-        decrypt_vctr(pubkey, prvkey, hrz, plain_hrz, 1, encoding_params);
-        for(int i=0; i<state_dim; i++){
-            fprintf(stderr, "id: %d (encrp) h[%d] = %+10.10lf\n", id, i, gsl_vector_get(plain_hrz, i));
-        }
-        for(int i=0; i<state_dim; i++){
-            for(int j=0; j<state_dim; j++){
-                fprintf(stderr, "id: %d (encrp) h[%d][%d] = %+10.10lf\n", id, i, j, gsl_matrix_get(plain_hrh, i, j));
-            }
-        }
+        // decrypt_mtrx(pubkey, prvkey, hrh, plain_hrh, 1, encoding_params);
+        // decrypt_vctr(pubkey, prvkey, hrz, plain_hrz, 1, encoding_params);
+        // for(int i=0; i<state_dim; i++){
+        //     fprintf(stderr, "id: %d (encrp) h[%d] = %+10.10lf\n", id, i, gsl_vector_get(plain_hrz, i));
+        // }
+        // for(int i=0; i<state_dim; i++){
+        //     for(int j=0; j<state_dim; j++){
+        //         fprintf(stderr, "id: %d (encrp) h[%d][%d] = %+10.10lf\n", id, i, j, gsl_matrix_get(plain_hrh, i, j));
+        //     }
+        // }
 
         // Add aggregation noise
         add_agg_noise_c_mtrx(pubkey, agg_key, hrh, t, 0);
@@ -335,7 +333,7 @@ void run_sensor(int id, char *sensor_filepath_base, encoding_params_t *encoding_
         // Send encrypted matrix and vector
         send_enc_mat(hrh, state_dim, state_dim, hrh_enc_strs, &hrh_request, serialisation_params);
         send_enc_mat(hrz, 1, state_dim, hrz_enc_strs, &hrz_request, serialisation_params);
-        //fprintf(stderr, "\nSensor %d sending : %s\n\n", id, hrh_enc_strs);
+        // fprintf(stderr, "\nSensor %d sending : %s\n\n", id, hrh_enc_strs); // Debugging
     }
 
     // 888b     d888                                 8888888888
@@ -412,7 +410,7 @@ void get_and_print_all_bcast_state_vars(int id, pubkey_t *pubkey, prvkey_t *prvk
 void get_bcast_state_var(ciphertext_t **state_var, char *enc_str, paillier_serialisation_params_t *serialisation_params){
     MPI_Bcast(enc_str, serialisation_params->paillier_max_enc_serialisation_chars, MPI_CHAR, 0, MPI_COMM_WORLD);
     *state_var = deserialise_encryption(enc_str);
-    //fprintf(stderr, "got %s\n", enc_str);
+    // fprintf(stderr, "got %s\n", enc_str); // Debugging
 }
 
 // Convenience method reducing weighted sum step to a shorter call
@@ -434,7 +432,7 @@ void send_enc_mat(c_mtrx_t *mat, int rows, int cols, char *enc_strs, MPI_Request
         for (int c=0; c<cols; c++){
             ind = enc_strs+(r*cols*(serialisation_params->paillier_max_enc_serialisation_chars)+c*(serialisation_params->paillier_max_enc_serialisation_chars));
             serialise_encryption(get_c_mtrx(mat, r, c), ind);
-            //fprintf(stderr, "len enc (%d %d) of (%d %d) %ld\n", r, c, rows, cols, strlen(ind));
+            // fprintf(stderr, "len enc (%d %d) of (%d %d) %ld\n", r, c, rows, cols, strlen(ind)); // Debugging
         }
     }
     MPI_Wait(req, MPI_STATUS_IGNORE);

@@ -13,8 +13,8 @@ import plotter
 SIM_REPEATS = 10
 
 # Which part of process to do
-DO_MEASUREMENT_GEN = True
-DO_SIM_RUN = True
+DO_MEASUREMENT_GEN = False
+DO_SIM_RUN = False
 DO_SIM_EVALUATE = True
 DO_PLOT_CREATE = True
 

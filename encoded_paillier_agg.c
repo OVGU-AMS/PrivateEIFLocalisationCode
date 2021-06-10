@@ -70,7 +70,7 @@ void agg_key_gen(pubkey_t *pubkey, int participants, aggkey_t *key_array){
 // Serialisation of paillier public key for MPI communication
 // Does not allocate buffer
 void serialise_pubkey(pubkey_t *pubkey, char *buffer){
-    //gmp_fprintf(stderr, "Serialising pubkey: %Zd\n", pubkey->n); // Debugging
+    // gmp_fprintf(stderr, "Serialising pubkey: %Zd\n", pubkey->n); // Debugging
     mpz_get_str(buffer, SERIALISATION_BASE, pubkey->n);
 }
 
@@ -78,14 +78,14 @@ void serialise_pubkey(pubkey_t *pubkey, char *buffer){
 // Allocates pubkey
 pubkey_t* deserialise_pubkey(char *key_serialisation){
     pubkey_t* k = paillier_pubkey_from_hex(key_serialisation);
-    //gmp_fprintf(stderr, "Deserialising pubkey: %Zd\n", k->n); // Debugging
+    // gmp_fprintf(stderr, "Deserialising pubkey: %Zd\n", k->n); // Debugging
     return k;
 }
 
 // Debugging - Serialisation of paillier public key for MPI communication
 // Does not allocate buffer
 void serialise_prvkey(prvkey_t *prvkey, char *buffer){
-    //gmp_fprintf(stderr, "Serialising prvkey: %Zd\n", prvkey->lambda); // Debugging
+    // gmp_fprintf(stderr, "Serialising prvkey: %Zd\n", prvkey->lambda); // Debugging
     mpz_get_str(buffer, SERIALISATION_BASE, prvkey->lambda);
 }
 
@@ -93,14 +93,14 @@ void serialise_prvkey(prvkey_t *prvkey, char *buffer){
 // Allocates pubkey
 prvkey_t* deserialise_prvkey(pubkey_t *pubkey, char *key_serialisation){
     prvkey_t* k = paillier_prvkey_from_hex(key_serialisation, pubkey);
-    //gmp_fprintf(stderr, "Deserialising prvkey: %Zd\n", k->lambda); // Debugging
+    // gmp_fprintf(stderr, "Deserialising prvkey: %Zd\n", k->lambda); // Debugging
     return k;
 }
 
 // Serialisation of aggregation private key for MPI communication
 // Does not allocates buffer
 void serialise_aggkey(aggkey_t aggkey, char *buffer){
-    gmp_fprintf(stderr, "Serialising aggkey: %Zd\n", aggkey); // Debugging
+    // gmp_fprintf(stderr, "Serialising aggkey: %Zd\n", aggkey); // Debugging
     mpz_get_str(buffer, SERIALISATION_BASE, aggkey);
 }
 
@@ -108,7 +108,7 @@ void serialise_aggkey(aggkey_t aggkey, char *buffer){
 // Allocates aggkey
 void deserialise_aggkey(aggkey_t aggkey, char *aggkey_serialisation){
     mpz_init_set_str(aggkey, aggkey_serialisation, SERIALISATION_BASE);
-    gmp_fprintf(stderr, "Deserialising aggkey: %Zd\n", aggkey); // Debugging
+    // gmp_fprintf(stderr, "Deserialising aggkey: %Zd\n", aggkey); // Debugging
 }
 
 // Serialisation of encryptions for MPI communication

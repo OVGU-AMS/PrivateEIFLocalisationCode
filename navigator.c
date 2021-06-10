@@ -102,7 +102,7 @@ void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int num_sensors, char *tr
 
     // Read number of time steps and the state dimension
     nav_input_err_check(fscanf(track_fp, "%d\n%d", &time_steps, &dimension), 2, "Could not read timesteps and dimension from track file!");
-    //fprintf(stderr, "0 steps=%d, dimension=%d\n", time_steps, dimension);
+    // fprintf(stderr, "0 steps=%d, dimension=%d\n", time_steps, dimension); // Debugging
 
     // Allocate state and covariance first as they must be populated from file
     state = gsl_vector_alloc(dimension);
@@ -206,8 +206,7 @@ void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int num_sensors, char *tr
         // Encrypt and broadcast the state variables
         broadcast_all_enc_state_vars(pubkey, state_enc, enc_str, state, encoding_params, serialisation_params);
 
-        // Debugging
-        print_all_enc_state_vars(state);
+        // print_all_enc_state_vars(state); // Debugging
 
         // Async receive of all hrh and hrz matrices from all sensors
         for (int s=0; s<num_sensors; s++){
@@ -463,7 +462,6 @@ void poll_sensor_and_aggregate(pubkey_t *pubkey,
         if (test_request){
             *received_flag = 1;
             get_c_mtrx_from_enc_str(enc_mat, dim1, dim2, enc_mat_str, serialisation_params);
-            fprintf(stderr, "Received enc\n");
 
             // If it's the first sensor to send initialise the sum with it's matrix
             if (!*first_received_flag){

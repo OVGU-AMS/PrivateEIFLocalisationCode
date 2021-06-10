@@ -11,7 +11,7 @@ void dist_phe_key(int num_sensors, pubkey_t *pubkey, paillier_serialisation_para
     char *key = (char *)malloc(serialisation_params->paillier_max_key_serialisation_chars * sizeof(char));
     serialise_pubkey(pubkey, key);
 
-    //fprintf(stderr, "id: %d, pubkey: %s\n", 0, key); // Debugging
+    // fprintf(stderr, "id: %d, pubkey: %s\n", 0, key); // Debugging
 
     // Send key to all
     MPI_Bcast(key, serialisation_params->paillier_max_key_serialisation_chars, MPI_CHAR, 0, MPI_COMM_WORLD);
@@ -24,7 +24,7 @@ void dist_phe_prv_key(int num_sensors, prvkey_t *prvkey, paillier_serialisation_
     char *key = (char *)malloc(serialisation_params->paillier_max_key_serialisation_chars * sizeof(char));
     serialise_prvkey(prvkey, key);
 
-    //fprintf(stderr, "id: %d, prvkey: %s\n", 0, key); // Debugging
+    // fprintf(stderr, "id: %d, prvkey: %s\n", 0, key); // Debugging
 
     // Send key to all
     MPI_Bcast(key, serialisation_params->paillier_max_key_serialisation_chars, MPI_CHAR, 0, MPI_COMM_WORLD);
@@ -36,7 +36,7 @@ void dist_agg_keys(int num_sensors, aggkey_t *aggkeys, char *aggkey_strs, MPI_Re
     // Serialise and send each key to respective sensor
     for (int s=0; s<num_sensors; s++){
         serialise_aggkey(aggkeys[s], aggkey_strs+(s*(serialisation_params->paillier_max_key_serialisation_chars)));
-        fprintf(stderr, "Sending to %d: %s\n", s+1, aggkey_strs+(s*(serialisation_params->paillier_max_key_serialisation_chars)));
+        // fprintf(stderr, "Sending to %d: %s\n", s+1, aggkey_strs+(s*(serialisation_params->paillier_max_key_serialisation_chars))); // Debugging
         MPI_Isend(aggkey_strs+(s*(serialisation_params->paillier_max_key_serialisation_chars)), serialisation_params->paillier_max_key_serialisation_chars, MPI_CHAR, s+1, 0, MPI_COMM_WORLD, agg_requests+s);
     }
 }
