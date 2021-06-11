@@ -67,7 +67,6 @@ def init_matplotlib_params(save_not_show_fig, show_latex_fig):
 #                                             "Y88P"
 
 def create_timing_plots(output_times_filepath_base, sensor_count_list, bitsize_list, width):
-
     # Always run from top project folder, if currently in python folder, move up
     dir_moved = False
     if os.getcwd().endswith('python_scripts'):
@@ -77,19 +76,13 @@ def create_timing_plots(output_times_filepath_base, sensor_count_list, bitsize_l
     # Reverse sort the bitzise counts so that large labels come first
     bitsize_list.sort(reverse=True)
 
-    # Specific sizing for Automatica format
-    subplot_adj_left = 0.175
-    subplot_adj_bottom = 0.175
-    # Together height and top padding are set to have picture height 0.77*3.09 = 2.38 inches (with enough space for legend above)
-    subplot_adj_top = 0.77
-    height = 3.09
-
+    # Fixed width for template, the rest if eye-balled
     fig = plt.figure()
-    fig.set_size_inches(w=width, h=height)
+    fig.set_size_inches(w=width, h=2)
     ax = fig.add_subplot(111)
-    plt.subplots_adjust(left=subplot_adj_left, bottom=subplot_adj_bottom, top=subplot_adj_top)
-    plt.gca().grid(linestyle='dashed')
-    plt.gca().set_axisbelow(True)
+    plt.subplots_adjust(left=0.175, right=0.825, bottom=0.16, top=0.63)
+    ax.grid(linestyle='dashed')
+    ax.set_axisbelow(True)
 
     sensor_counts = {}
     for s in sensor_count_list:
@@ -100,26 +93,25 @@ def create_timing_plots(output_times_filepath_base, sensor_count_list, bitsize_l
                 if len(time_vals) == 0:
                     mean = -1
                 else:
-                    # print("%d Run times for %d sensors using %d bit encryption:" % (len(time_vals), s, b), time_vals)
                     mean = np.mean(time_vals)
                 sensor_counts[s].append(mean)
 
         assert(len(sensor_counts[s]) == len(bitsize_list))
-
-        # Plot for x axis as Paillier bitsize
-        #ax.plot([512, 1024, 2048], sensor_counts[s], marker='.')
 
     plot_handles = []
     for b in range(len(bitsize_list)):
         ph, = ax.plot(sensor_count_list, [sensor_counts[i][b] for i in sensor_count_list], marker='x', label=r'%d' % bitsize_list[b])
         plot_handles.append(ph)
 
-    ax.set_xlabel(r'Number of sensors')
-    ax.set_ylabel(r'Runtime ($s$)')
+    # Set the ticks to be all of the sensor amounts tested
     ax.set_xticks(sensor_count_list)
 
-    leg = fig.legend(handles=plot_handles, title='Encryption Scheme Key Length (bits)', loc='upper center', ncol=3)
-    #plt.setp(leg.get_title(), multialignment='center')
+    # Used gloabl axis labels to match the other figures
+    fig.supxlabel(r'Number of sensors')
+    fig.supylabel(r'Runtime ($s$)')
+
+    # Legend
+    fig.legend(handles=plot_handles, title='Key Length (bits)', loc='upper center', ncol=3)
 
     if matplotlib.get_backend() == 'pgf':
         plt.savefig('pictures/timing.pdf')
@@ -199,50 +191,52 @@ def create_encoding_plots(output_filepath_base, encoding_types_list, sim_timeste
 
 
 def create_distance_plots(output_filepath_base, distance_layout_list, distance_layout_labels, sim_timesteps, width, eif_filepath_base):
-
     # Always run from top project folder, if currently in python folder, move up
     dir_moved = False
     if os.getcwd().endswith('python_scripts'):
         os.chdir('../')
         dir_moved = True
 
-    # Specific sizing for Automatica format
-    subplot_adj_left = 0.175
-    subplot_adj_bottom = 0.175
-    # Together height and top padding are set to have picture height 0.68*3.5 = 2.38 inches (with enough space for legend above)
-    subplot_adj_top = 0.68
-    height = 3.5
+    # Width fixed for template, the rest is eye-balled
+    fig, axs = plt.subplots(4,1, figsize=(width, 4.5), sharex=True, sharey=False)
+    plt.subplots_adjust(wspace=0, hspace=0.375, top=0.81, bottom=0.0825, left=0.16, right=0.84)
+    
+    enc_plot_handles = []
+    eif_plot_handles = []
+    diff_plot_handles = []
 
-    fig = plt.figure()
-    fig.set_size_inches(w=width, h=height)
-    ax = fig.add_subplot(111)
-    plt.subplots_adjust(left=subplot_adj_left, bottom=subplot_adj_bottom, top=subplot_adj_top)
-    plt.gca().grid(linestyle='dashed')
-    plt.gca().set_axisbelow(True)
-
-    plot_handles = []
-    layout_errors = {}
+    # Axis for each layout
     for i,layout in enumerate(distance_layout_list):
+        ax = axs.flat[i]
+        ax.set_title(distance_layout_labels[i])
+        ax.grid(linestyle='dashed')
+        if i < len(distance_layout_list)-1:
+            ax.tick_params(labelcolor='none', bottom=False)
+
+        # Plot our filter errors
         with open(output_filepath_base % layout) as distance_f:
-                mean_errors = [float(x.strip()) if x.strip() != 'Failed' else -1 for x in distance_f.read().split()]
+            mean_enc_errors = [float(x.strip()) if x.strip() != 'Failed' else -1 for x in distance_f.read().split()]
+        # Note [1:] skips the first estimate as it is the initial state and same for all
+        ph_enc, = ax.plot([x for x in list(range(sim_timesteps))][1:], mean_enc_errors[1:])
+        enc_plot_handles.append(ph_enc)
 
-        layout_errors[layout] = mean_errors
-        ph, = ax.plot([x for x in list(range(sim_timesteps))], mean_errors, label=r'%s' % distance_layout_labels[i])
-        plot_handles.append(ph)
-
-    if eif_filepath_base != None:
-        for i,layout in enumerate(distance_layout_list):
+        # If a standard EIF errors file is give, plot that and the difference between it and ours as well
+        if eif_filepath_base != None:
             with open(eif_filepath_base % layout) as eif_distance_f:
-                    mean_errors = [float(x.strip()) if x.strip() != 'Failed' else -1 for x in eif_distance_f.read().split()]
+                mean_eif_errors = [float(x.strip()) if x.strip() != 'Failed' else -1 for x in eif_distance_f.read().split()]
+            mean_diffs = [abs(x-y) for x,y in zip(mean_enc_errors, mean_eif_errors)]
+            # Note [1:] skips the first estimate as it is the initial state and same for all
+            ph_eif, = ax.plot([x for x in list(range(sim_timesteps))][1:], mean_eif_errors[1:], linestyle='--')
+            ph_dif, = ax.plot([x for x in list(range(sim_timesteps))][1:], mean_diffs[1:], linestyle='--')
+            eif_plot_handles.append(ph_eif)
+            diff_plot_handles.append(ph_dif)
 
-            layout_errors[layout] = mean_errors
-            ph, = ax.plot([x for x in list(range(sim_timesteps))], mean_errors, label=r'%s (EIF)' % distance_layout_labels[i], linestyle='--')
-            plot_handles.append(ph)
+    # Shared axis labels
+    fig.supxlabel(r'Filter Timesteps')
+    fig.supylabel(r'Simulation Error (RMSE)')
 
-    ax.set_xlabel(r'Filter Iterations')
-    ax.set_ylabel(r'Average Simulation Error')
-
-    fig.legend(handles=plot_handles, title='Layout', loc='upper center', ncol=2)
+    # Legend only uses lines from first plot (all are the same colours)
+    fig.legend((enc_plot_handles[0], eif_plot_handles[0], diff_plot_handles[0]), (r'Privacy-preserving Filter', r'Standard EIF', r'Difference'), loc='upper center', ncol=1)
 
     if matplotlib.get_backend() == 'pgf':
         plt.savefig('pictures/layout_errors.pdf')
@@ -285,13 +279,12 @@ def plot_layouts_and_track(track_filepath, sensor_lists, sensor_list_labels):
         for _ in range(timesteps):
             ground_truth.append(np.array([float(x) for x in track_f.readline().split()]))
 
-    # Specific sizing
-    height = 3.5
+    # Fixed width from template
     width = 2.95
 
     # Make subplots. Special sizes to accomodate Automatica column width
-    fig, axs = plt.subplots(2,2, figsize=(width, height), sharex=True, sharey=True)
-    plt.subplots_adjust(wspace=-0.1, hspace=0.4, top=0.7, bottom=0.18, left=0.18, right=0.91)
+    fig, axs = plt.subplots(2,2, figsize=(width, 3), sharex=True, sharey=True)
+    plt.subplots_adjust(wspace=-0.25, hspace=0.35, top=0.71, bottom=0.13, left=0.1, right=0.9)
 
     plots = []
     scatters = []
@@ -312,12 +305,12 @@ def plot_layouts_and_track(track_filepath, sensor_lists, sensor_list_labels):
         scatters.append(s)
         plots.append(p)
 
-    # make legend
-    fig.legend((plots[0], i_s, scatters[0]), (r'Ground Truth', r'Initial State Estimate', r'Sensors'), loc='upper center', ncol=1)
+    # Legend
+    fig.legend((plots[0], i_s, scatters[0]), (r'Ground Truth', r'Initial Estimate and Covariance', r'Sensors'), loc='upper center', ncol=1)
 
-    # Place axis labels independently, made to fit Automatica column format
-    fig.text(0.5, 0.03, r'Location $x$', ha='center')
-    fig.text(0.03, 0.5, r'Location $y$', va='center', rotation='vertical')
+    # Shared axis labels
+    fig.supxlabel(r'Location $x$')
+    fig.supylabel(r'Location $y$')
 
     # Hide ticks from intermediate axes
     for a in [axs[0][0], axs[0][1]]:
@@ -464,30 +457,30 @@ def get_cov_ellipse(cov, centre, nstd, **kwargs):
 
 
 if __name__ == '__main__':
-    init_matplotlib_params(False, False)
-    plot_sim(TRACK_FILEPATH_DEFAULT, OUTPUT_FILEPATH_DEFAULT, SENSOR_FILEPATH_BASE, NUM_SENSORS_DEFAULT, ADDITIONAL_SENSOR_LOCATIONS_DEFAULT)
+    init_matplotlib_params(True, True)
+    # plot_sim(TRACK_FILEPATH_DEFAULT, OUTPUT_FILEPATH_DEFAULT, SENSOR_FILEPATH_BASE, NUM_SENSORS_DEFAULT, ADDITIONAL_SENSOR_LOCATIONS_DEFAULT)
 
     #create_timing_plots('output/timing_%d_%d_nav_times.txt', [2,3,4,5], [512, 1024, 1536, 2048, 2560])
     #create_encoding_plots('output_evaluation/encoding_%d_%d_nav_mean_errors.txt', [(64, 16), (128, 32), (256, 64)], 50)
     #create_distance_plots('output_evaluation/layout_%s_nav_mean_errors.txt', ['small', 'normal', 'big', 'verybig'], ['Small', 'Normal', 'Large', 'Very Large'], 50)
-    # sensor_locations = [[np.array([5.0, 5.0]), # Normal
-    #                     np.array([40.0, 5.0]), 
-    #                     np.array([5.0, 40.0]), 
-    #                     np.array([40.0, 40.0])],
-    #                     [np.array([-30.0, -30.0]), # Big
-    #                     np.array([75.0, -30.0]), 
-    #                     np.array([-30.0, 75.0]), 
-    #                     np.array([75.0, 75.0])],
-    #                     [np.array([-65.0, -65.0]), # Very big 
-    #                     np.array([110.0, -65.0]), 
-    #                     np.array([-65.0, 110.0]), 
-    #                     np.array([110.0, 110.0])],
-    #                     [np.array([-100.0, -100.0]), # Huge
-    #                     np.array([145.0, -100.0]), 
-    #                     np.array([-100.0, 145.0]), 
-    #                     np.array([145.0, 145.0])], 
-    #                     [np.array([22.0, 22.0]), # Small                        
-    #                     np.array([23.0, 22.0]), 
-    #                     np.array([22.0, 23.0]), 
-    #                     np.array([23.0, 23.0])]]
-    # plot_layouts_and_track('input/track1.txt', sensor_locations, ['Normal', 'Big', 'Quite Big', 'Very Big', 'Small'])
+    sensor_locations = [[np.array([5.0, 5.0]), # Normal
+                        np.array([40.0, 5.0]), 
+                        np.array([5.0, 40.0]), 
+                        np.array([40.0, 40.0])],
+                        [np.array([-30.0, -30.0]), # Big
+                        np.array([75.0, -30.0]), 
+                        np.array([-30.0, 75.0]), 
+                        np.array([75.0, 75.0])],
+                        [np.array([-65.0, -65.0]), # Very big 
+                        np.array([110.0, -65.0]), 
+                        np.array([-65.0, 110.0]), 
+                        np.array([110.0, 110.0])],
+                        [np.array([-100.0, -100.0]), # Huge
+                        np.array([145.0, -100.0]), 
+                        np.array([-100.0, 145.0]), 
+                        np.array([145.0, 145.0])], 
+                        [np.array([22.0, 22.0]), # Small                        
+                        np.array([23.0, 22.0]), 
+                        np.array([22.0, 23.0]), 
+                        np.array([23.0, 23.0])]]
+    plot_layouts_and_track('input/track1.txt', sensor_locations, ['Normal', 'Big', 'Quite Big', 'Very Big', 'Small'])

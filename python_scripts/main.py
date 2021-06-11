@@ -15,7 +15,7 @@ SIM_REPEATS = 10
 # Which part of process to do
 DO_MEASUREMENT_GEN = False
 DO_SIM_RUN = False
-DO_SIM_EVALUATE = True
+DO_SIM_EVALUATE = False
 DO_PLOT_CREATE = True
 
 # Which scenarios to run
