@@ -457,30 +457,30 @@ def get_cov_ellipse(cov, centre, nstd, **kwargs):
 
 
 if __name__ == '__main__':
-    init_matplotlib_params(True, True)
-    # plot_sim(TRACK_FILEPATH_DEFAULT, OUTPUT_FILEPATH_DEFAULT, SENSOR_FILEPATH_BASE, NUM_SENSORS_DEFAULT, ADDITIONAL_SENSOR_LOCATIONS_DEFAULT)
+    init_matplotlib_params(False, False)
+    plot_sim(TRACK_FILEPATH_DEFAULT, OUTPUT_FILEPATH_DEFAULT, SENSOR_FILEPATH_BASE, NUM_SENSORS_DEFAULT, ADDITIONAL_SENSOR_LOCATIONS_DEFAULT)
 
     #create_timing_plots('output/timing_%d_%d_nav_times.txt', [2,3,4,5], [512, 1024, 1536, 2048, 2560])
     #create_encoding_plots('output_evaluation/encoding_%d_%d_nav_mean_errors.txt', [(64, 16), (128, 32), (256, 64)], 50)
     #create_distance_plots('output_evaluation/layout_%s_nav_mean_errors.txt', ['small', 'normal', 'big', 'verybig'], ['Small', 'Normal', 'Large', 'Very Large'], 50)
-    sensor_locations = [[np.array([5.0, 5.0]), # Normal
-                        np.array([40.0, 5.0]), 
-                        np.array([5.0, 40.0]), 
-                        np.array([40.0, 40.0])],
-                        [np.array([-30.0, -30.0]), # Big
-                        np.array([75.0, -30.0]), 
-                        np.array([-30.0, 75.0]), 
-                        np.array([75.0, 75.0])],
-                        [np.array([-65.0, -65.0]), # Very big 
-                        np.array([110.0, -65.0]), 
-                        np.array([-65.0, 110.0]), 
-                        np.array([110.0, 110.0])],
-                        [np.array([-100.0, -100.0]), # Huge
-                        np.array([145.0, -100.0]), 
-                        np.array([-100.0, 145.0]), 
-                        np.array([145.0, 145.0])], 
-                        [np.array([22.0, 22.0]), # Small                        
-                        np.array([23.0, 22.0]), 
-                        np.array([22.0, 23.0]), 
-                        np.array([23.0, 23.0])]]
-    plot_layouts_and_track('input/track1.txt', sensor_locations, ['Normal', 'Big', 'Quite Big', 'Very Big', 'Small'])
+    # sensor_locations = [[np.array([5.0, 5.0]), # Normal
+    #                     np.array([40.0, 5.0]), 
+    #                     np.array([5.0, 40.0]), 
+    #                     np.array([40.0, 40.0])],
+    #                     [np.array([-30.0, -30.0]), # Big
+    #                     np.array([75.0, -30.0]), 
+    #                     np.array([-30.0, 75.0]), 
+    #                     np.array([75.0, 75.0])],
+    #                     [np.array([-65.0, -65.0]), # Very big 
+    #                     np.array([110.0, -65.0]), 
+    #                     np.array([-65.0, 110.0]), 
+    #                     np.array([110.0, 110.0])],
+    #                     [np.array([-100.0, -100.0]), # Huge
+    #                     np.array([145.0, -100.0]), 
+    #                     np.array([-100.0, 145.0]), 
+    #                     np.array([145.0, 145.0])], 
+    #                     [np.array([22.0, 22.0]), # Small                        
+    #                     np.array([23.0, 22.0]), 
+    #                     np.array([22.0, 23.0]), 
+    #                     np.array([23.0, 23.0])]]
+    # plot_layouts_and_track('input/track1.txt', sensor_locations, ['Normal', 'Big', 'Quite Big', 'Very Big', 'Small'])

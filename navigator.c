@@ -249,6 +249,7 @@ void run_navigator(pubkey_t *pubkey, prvkey_t *prvkey, int num_sensors, char *tr
         // Decrypt the summed sensor matrices and vectors
         decrypt_mtrx(pubkey, prvkey, enc_hrh_sum, hrh_sum, 1, encoding_params);
         decrypt_vctr(pubkey, prvkey, enc_hrz_sum, hrz_sum, 1, encoding_params);
+        // TODO should create the true measurmeent matrix and vector by inserting the known zero elements here and avoid having to receive them from the sensors
         fprintf(stderr, "Matrix sum:\n");
         print_gsl_matrix(hrh_sum, dimension, dimension);
         fprintf(stderr, "Vector sum:\n");

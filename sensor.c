@@ -244,20 +244,23 @@ void run_sensor(int id, char *sensor_filepath_base, encoding_params_t *encoding_
         encode_then_add(pubkey, mat_elem, partial_sum, 4*inv_R_adj*pow(loc_y, 2), encoding_params);
         refresh_encryption(pubkey, mat_elem, mat_elem);
 
-        // hrh remaining elements are 0
-        mat_elem = get_c_mtrx(hrh, 0, 1);
-        encrypt_zero(pubkey, mat_elem);
-        refresh_encryption(pubkey, get_c_mtrx(hrh, 0, 3), mat_elem);
-        refresh_encryption(pubkey, get_c_mtrx(hrh, 2, 1), mat_elem);
-        refresh_encryption(pubkey, get_c_mtrx(hrh, 2, 3), mat_elem);
-        refresh_encryption(pubkey, get_c_mtrx(hrh, 1, 0), mat_elem);
-        refresh_encryption(pubkey, get_c_mtrx(hrh, 1, 1), mat_elem);
-        refresh_encryption(pubkey, get_c_mtrx(hrh, 1, 2), mat_elem);
-        refresh_encryption(pubkey, get_c_mtrx(hrh, 3, 0), mat_elem);
-        refresh_encryption(pubkey, get_c_mtrx(hrh, 1, 3), mat_elem);
-        refresh_encryption(pubkey, get_c_mtrx(hrh, 3, 1), mat_elem);
-        refresh_encryption(pubkey, get_c_mtrx(hrh, 3, 2), mat_elem);
-        refresh_encryption(pubkey, get_c_mtrx(hrh, 3, 3), mat_elem);
+        // hrh remaining elements are 0 (publically) and can be left as initialised - unblinded encryptions of zero
+        // TODO should instead only serialise and send the 4 relevant values and not send these encryptions of zero as they are fixed
+        
+        // Manually setting remaining elements as 0
+        // mat_elem = get_c_mtrx(hrh, 0, 1);
+        // encrypt_zero(pubkey, mat_elem);
+        // refresh_encryption(pubkey, get_c_mtrx(hrh, 0, 3), mat_elem);
+        // refresh_encryption(pubkey, get_c_mtrx(hrh, 2, 1), mat_elem);
+        // refresh_encryption(pubkey, get_c_mtrx(hrh, 2, 3), mat_elem);
+        // refresh_encryption(pubkey, get_c_mtrx(hrh, 1, 0), mat_elem);
+        // refresh_encryption(pubkey, get_c_mtrx(hrh, 1, 1), mat_elem);
+        // refresh_encryption(pubkey, get_c_mtrx(hrh, 1, 2), mat_elem);
+        // refresh_encryption(pubkey, get_c_mtrx(hrh, 3, 0), mat_elem);
+        // refresh_encryption(pubkey, get_c_mtrx(hrh, 1, 3), mat_elem);
+        // refresh_encryption(pubkey, get_c_mtrx(hrh, 3, 1), mat_elem);
+        // refresh_encryption(pubkey, get_c_mtrx(hrh, 3, 2), mat_elem);
+        // refresh_encryption(pubkey, get_c_mtrx(hrh, 3, 3), mat_elem);
 
         // 888    888 8888888b.    .d88                888        .d88          88b.           888    888          88b.
         // 888    888 888   Y88b  d88P"                888       d88P"          "Y88b          888    888          "Y88b
@@ -309,10 +312,13 @@ void run_sensor(int id, char *sensor_filepath_base, encoding_params_t *encoding_
         encode_mult_then_add(pubkey, mat_elem, partial_sum, enc_state.y2, -2*inv_R_adj*loc_y, encoding_params);
         refresh_encryption(pubkey, mat_elem, mat_elem);
 
-        // hrz remaining elements are 0
-        mat_elem = get_c_mtrx(hrz, 0, 1);
-        encrypt_zero(pubkey, mat_elem);
-        refresh_encryption(pubkey, get_c_mtrx(hrz, 0, 3), mat_elem);
+        // hrz remaining elements are 0 (publically) and can be left as initialised - unblinded encryptions of zero
+        // TODO should instead only serialise and send the 2 relevant values and not send these encryptions of zero as they are fixed
+        
+        // Manually setting remaining elements as 0
+        // mat_elem = get_c_mtrx(hrz, 0, 1);
+        // encrypt_zero(pubkey, mat_elem);
+        // refresh_encryption(pubkey, get_c_mtrx(hrz, 0, 3), mat_elem);
 
         // Debugging
         // decrypt_mtrx(pubkey, prvkey, hrh, plain_hrh, 1, encoding_params);
