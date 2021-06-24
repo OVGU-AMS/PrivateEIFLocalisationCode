@@ -12,7 +12,7 @@
 #include "navigator.h"
 
 // Defaults when no input is given
-#define TRACK_FILEPATH "input/debug_track1.txt"
+#define TRACK_FILEPATH "input/debug_track_001.txt"
 #define NAV_FILEPATH "output/debug_nav_001.txt"
 #define SENSOR_FILEPATH_BASE "input/debug_sim_001_sensor%d.txt"
 

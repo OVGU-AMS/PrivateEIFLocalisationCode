@@ -30,7 +30,7 @@ SENSOR_LOCATIONS_DEFAULT = [np.array([5.0, 5.0]), # Normal
                             np.array([145.0, -100.0]), 
                             np.array([-100.0, 145.0]), 
                             np.array([145.0, 145.0])]
-TRACK_FILEPATH_DEFAULT = "input/debug_track1.txt"
+TRACK_FILEPATH_DEFAULT = "input/debug_track_%03d.txt"
 SENSOR_FILEPATH_BASE_DEFAULT = "input/debug_sim_%03d_sensor%d.txt"
 NUM_SIMS_DEFAULT = 1
 FIRST_SENSOR_INDEX_DEFAULT = 0
@@ -46,7 +46,7 @@ def generate_sim_inputs(track_filepath, sensor_filepath_base, number_of_sims, se
         dir_moved = True
 
     for s in range(1, number_of_sims+1):
-        track_f = open(track_filepath, 'r')
+        track_f = open(track_filepath % s, 'r')
         sensor_fs = [open(sensor_filepath_base % (s, str(i)), 'w') for i in range(1, number_of_sensors+1)]
         all_sensor_measurements = [[] for i in range(number_of_sensors)]
 

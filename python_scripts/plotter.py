@@ -6,9 +6,9 @@ import os
 
 
 # Single plot defaults when this file is run
-TRACK_FILEPATH_DEFAULT = "input/debug_track1.txt"
-OUTPUT_FILEPATH_DEFAULT = "output/debug_nav_001.txt"
-SENSOR_FILEPATH_BASE = "input/debug_sim_001_sensor%d.txt"
+TRACK_FILEPATH_DEFAULT = "input/track_002.txt"
+OUTPUT_FILEPATH_DEFAULT = "output/layout_normal_nav_002.txt"
+SENSOR_FILEPATH_BASE = "input/layout_normal_sim_002_sensor%d.txt"
 NUM_SENSORS_DEFAULT = 4
 ADDITIONAL_SENSOR_LOCATIONS_DEFAULT = []
 
@@ -270,7 +270,7 @@ def plot_layouts_and_track(track_filepath, sensor_lists, sensor_list_labels):
         dir_moved = True
 
     # Get track file measurements
-    with open(track_filepath) as track_f:
+    with open(track_filepath % 1) as track_f:
         ground_truth = []
         timesteps = int(track_f.readline())
         dimenstions = int(track_f.readline())
@@ -309,7 +309,7 @@ def plot_layouts_and_track(track_filepath, sensor_lists, sensor_list_labels):
     fig.legend((plots[0], i_s, scatters[0]), (r'Ground Truth', r'Initial Estimate and Covariance', r'Sensors'), loc='upper center', ncol=1)
 
     # Shared axis labels
-    fig.supxlabel(r'Location $x$')
+    fig.supxlabel(r'Location $x$')   
     fig.supylabel(r'Location $y$')
 
     # Hide ticks from intermediate axes
@@ -483,4 +483,4 @@ if __name__ == '__main__':
     #                     np.array([23.0, 22.0]), 
     #                     np.array([22.0, 23.0]), 
     #                     np.array([23.0, 23.0])]]
-    # plot_layouts_and_track('input/track1.txt', sensor_locations, ['Normal', 'Big', 'Quite Big', 'Very Big', 'Small'])
+    # plot_layouts_and_track('input/debug_track_1.txt', sensor_locations, ['Normal', 'Big', 'Quite Big', 'Very Big', 'Small'])

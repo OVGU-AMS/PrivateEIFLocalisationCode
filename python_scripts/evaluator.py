@@ -6,7 +6,7 @@ import os
 import numpy as np
 
 # Defaults for when this file is run
-TRACK_FILEPATH_DEFAULT = "input/debug_track1.txt"
+TRACK_FILEPATH_DEFAULT = "input/debug_track_%03d.txt"
 SIM_OUTPUT_FILEPATH_BASE_DEFAULT = "output/debug_nav_%03d.txt"
 ERROR_OUTPUT_FILEPATH_BASE_DEFAULT = "output_evaluation/debug_nav_errors_%03d.txt"
 MEAN_ERROR_OUTPUT_FILEPATH_DEFAULT = "output_evaluation/debug_nav_mean_errors.txt"
@@ -27,7 +27,7 @@ def create_sim_error_files(track_filepath, sim_output_filepath_base, error_outpu
     for i in range(1, num_simulations+1):
         errors = []
         to_skip = False
-        with open(track_filepath, 'r') as track_f:
+        with open(track_filepath % i, 'r') as track_f:
             with open(sim_output_filepath_base % i, 'r') as sim_output_f:
 
                 timesteps = int(track_f.readline())

@@ -1,4 +1,4 @@
 {
-    "python.pythonPath": "C:\\Users\\ristic\\AppData\\Local\\Programs\\Python\\Python39\\python.exe",
+    "python.pythonPath": "/bin/python3",
     "python.analysis.extraPaths": ["./python_scripts"]
 }

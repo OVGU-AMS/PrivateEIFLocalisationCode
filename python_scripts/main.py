@@ -8,14 +8,16 @@ import runner
 import base_runner
 import evaluator
 import plotter
+import track_generator
 
 # Process (gen., sim., eval., etc.) repeats 
 SIM_REPEATS = 10
 
 # Which part of process to do
-DO_MEASUREMENT_GEN = False
-DO_SIM_RUN = False
-DO_SIM_EVALUATE = False
+DO_TRACK_GEN = True
+DO_MEASUREMENT_GEN = True
+DO_SIM_RUN = True
+DO_SIM_EVALUATE = True
 DO_PLOT_CREATE = True
 
 # Which scenarios to run
@@ -33,7 +35,7 @@ SHOW_LATEX_FIG = True
 FIG_WIDTH_DEFAULT = 2.95
 
 # Generate measurements, run simulations, evaluate results, and plot results (or any subset of these)
-def run_all(sim_repeats, do_measurement_gen, do_sim_run, do_sim_evaluate, do_plot_create, do_encoding, do_timing, do_distance):
+def run_all(sim_repeats, do_track_gen, do_measurement_gen, do_sim_run, do_sim_evaluate, do_plot_create, do_encoding, do_timing, do_distance):
 
     """
     8888888b.
@@ -89,6 +91,26 @@ def run_all(sim_repeats, do_measurement_gen, do_sim_run, do_sim_evaluate, do_plo
     layouts_fig_width = FIG_WIDTH_DEFAULT
 
     """
+    88888888888                       888                                          
+        888                           888                                          
+        888                           888                                          
+        888  888d888 8888b.   .d8888b 888  888       .d88b.   .d88b.  88888b.      
+        888  888P"      "88b d88P"    888 .88P      d88P"88b d8P  Y8b 888 "88b     
+        888  888    .d888888 888      888888K       888  888 88888888 888  888     
+        888  888    888  888 Y88b.    888 "88b      Y88b 888 Y8b.     888  888 d8b 
+        888  888    "Y888888  "Y8888P 888  888       "Y88888  "Y8888  888  888 Y8P 
+                                                         888                       
+                                                    Y8b d88P                       
+                                                     "Y88P"                        
+    """
+
+    if do_track_gen:
+        print("Genereating tracks for simulations...")
+        track_generator.generate_input_tracks("input/track_%03d.txt", sim_repeats)
+
+        print("Finished genereating tracks.\n")
+
+    """
     888b     d888                                                                                     888
     8888b   d8888                                                                                     888
     88888b.d88888                                                                                     888
@@ -107,12 +129,12 @@ def run_all(sim_repeats, do_measurement_gen, do_sim_run, do_sim_evaluate, do_plo
         if do_encoding:
             print("Genereating measurements for encoding plot...")
             for frac_bits in encodings_to_test:
-                generator.generate_sim_inputs("input/track1.txt", "input/encoding_" + str(frac_bits) + "_sim_%03d_sensor%s.txt", sim_repeats, sensor_locations, 0, 4)
+                generator.generate_sim_inputs("input/track_%03d.txt", "input/encoding_" + str(frac_bits) + "_sim_%03d_sensor%s.txt", sim_repeats, sensor_locations, 0, 4)
 
         # Genereate measurements for timing plots
         if do_timing:
             print("Genereating measurements for timing plot...")
-            generator.generate_sim_inputs("input/track1.txt", "input/timing_sim_%03d_sensor%s.txt", sim_repeats, sensor_locations, 0, 8)
+            generator.generate_sim_inputs("input/track_%03d.txt", "input/timing_sim_%03d_sensor%s.txt", sim_repeats, sensor_locations, 0, 8)
 
         # Generate measurements for distance plots
         if do_distance:
@@ -120,7 +142,7 @@ def run_all(sim_repeats, do_measurement_gen, do_sim_run, do_sim_evaluate, do_plo
             for i,layout in enumerate(layouts):
                 sensor_fpb = "input/layout_" + layout + "_sim_%03d_sensor%s.txt"
                 sensor_start_index = i*4
-                generator.generate_sim_inputs("input/track1.txt", sensor_fpb, sim_repeats, sensor_locations, sensor_start_index, 4)
+                generator.generate_sim_inputs("input/track_%03d.txt", sensor_fpb, sim_repeats, sensor_locations, sensor_start_index, 4)
 
         print("Finished genereating measurements.\n")
 
@@ -150,7 +172,7 @@ def run_all(sim_repeats, do_measurement_gen, do_sim_run, do_sim_evaluate, do_plo
                 out_times_fp = "output/encoding_" + str(frac_bits) + "_nav_times.txt"
 
                 if not ENCODING_ONLY_EIF_BASE:
-                    runner.run_simulation_repeats("input/track1.txt",
+                    runner.run_simulation_repeats("input/track_%03d.txt",
                                                     in_fpb,
                                                     out_fpb,
                                                     out_times_fp,
@@ -160,7 +182,7 @@ def run_all(sim_repeats, do_measurement_gen, do_sim_run, do_sim_evaluate, do_plo
             frac_bits = encodings_to_test[0]
             in_eif_fpb = "input/encoding_" + str(frac_bits) + "_sim_%03d_sensor%s.txt"
             out_eif_fpb = "output/eif_encoding_" + str(frac_bits) + "_nav_%03d.txt"
-            base_runner.run_normal_eif("input/track1.txt", in_eif_fpb, out_eif_fpb, sim_repeats, 4)
+            base_runner.run_normal_eif("input/track_%03d.txt", in_eif_fpb, out_eif_fpb, sim_repeats, 4)
 
         # Run all timing sims
         if do_timing:
@@ -170,7 +192,7 @@ def run_all(sim_repeats, do_measurement_gen, do_sim_run, do_sim_evaluate, do_plo
 
                     out_fpb = "output/timing_" + str(bitsize) + "_" + str(sensors) + "_nav_%03d.txt"
                     out_times_fp = "output/timing_" + str(bitsize) + "_" + str(sensors) + "_nav_times.txt"
-                    runner.run_simulation_repeats("input/track1.txt",
+                    runner.run_simulation_repeats("input/track_%03d.txt",
                                                     "input/timing_sim_%03d_sensor%s.txt",
                                                     out_fpb,
                                                     out_times_fp,
@@ -186,13 +208,13 @@ def run_all(sim_repeats, do_measurement_gen, do_sim_run, do_sim_evaluate, do_plo
                 out_eif_fpb = "output/eif_layout_" + layout + "_nav_%03d.txt"
 
                 if not DISTANCE_ONLY_EIF_BASE:
-                    runner.run_simulation_repeats("input/track1.txt",
+                    runner.run_simulation_repeats("input/track_%03d.txt",
                                                     in_fpb,
                                                     out_fpb,
                                                     out_times_fp,
                                                     4, 1024, 32, sim_repeats)
 
-                base_runner.run_normal_eif("input/track1.txt", in_fpb, out_eif_fpb, sim_repeats, 4)
+                base_runner.run_normal_eif("input/track_%03d.txt", in_fpb, out_eif_fpb, sim_repeats, 4)
 
         print("Finished running simulations.\n")
 
@@ -221,14 +243,14 @@ def run_all(sim_repeats, do_measurement_gen, do_sim_run, do_sim_evaluate, do_plo
                 meanerrout_fp = "output_evaluation/encoding_" + str(frac_bits) + "_nav_mean_errors.txt"
 
                 if not ENCODING_ONLY_EIF_BASE:
-                    evaluator.create_sim_error_files("input/track1.txt", out_fpb, errout_fpb, meanerrout_fp, sim_repeats)
+                    evaluator.create_sim_error_files("input/track_%03d.txt", out_fpb, errout_fpb, meanerrout_fp, sim_repeats)
             
             # Only one EIF was run on the first encoding settings, as they don't affect the normal filter
             frac_bits = encodings_to_test[0]
             out_eif_fpb = "output/eif_encoding_" + str(frac_bits) + "_nav_%03d.txt"
             errout_eif_fpb = "output_evaluation/eif_encoding_" + str(frac_bits) + "_nav_errors_%03d.txt"
             meanerrout_eif_fp = "output_evaluation/eif_encoding_" + str(frac_bits) + "_nav_mean_errors.txt"
-            evaluator.create_sim_error_files("input/track1.txt", out_eif_fpb, errout_eif_fpb, meanerrout_eif_fp, sim_repeats)
+            evaluator.create_sim_error_files("input/track_%03d.txt", out_eif_fpb, errout_eif_fpb, meanerrout_eif_fp, sim_repeats)
 
         # Compute timing errors
         if do_timing:
@@ -238,7 +260,7 @@ def run_all(sim_repeats, do_measurement_gen, do_sim_run, do_sim_evaluate, do_plo
                     out_fpb = "output/timing_" + str(bitsize) + "_" + str(sensors) + "_nav_%03d.txt"
                     errout_fpb = "output_evaluation/timing_" + str(bitsize) + "_" + str(sensors) + "_nav_errors_%03d.txt"
                     meanerrout_fp = "output_evaluation/timing_" + str(bitsize) + "_" + str(sensors) + "_nav_mean_errors.txt"
-                    evaluator.create_sim_error_files("input/track1.txt", out_fpb, errout_fpb, meanerrout_fp, sim_repeats)
+                    evaluator.create_sim_error_files("input/track_%03d.txt", out_fpb, errout_fpb, meanerrout_fp, sim_repeats)
 
         # Compute distance errors
         if do_distance:
@@ -253,8 +275,8 @@ def run_all(sim_repeats, do_measurement_gen, do_sim_run, do_sim_evaluate, do_plo
                 meanerrout_eif_fp = "output_evaluation/eif_layout_" + layout + "_nav_mean_errors.txt"
 
                 if not DISTANCE_ONLY_EIF_BASE:
-                    evaluator.create_sim_error_files("input/track1.txt", out_fpb, errout_fpb, meanerrout_fp, sim_repeats)
-                evaluator.create_sim_error_files("input/track1.txt", out_eif_fpb, errout_eif_fpb, meanerrout_eif_fp, sim_repeats)
+                    evaluator.create_sim_error_files("input/track_%03d.txt", out_fpb, errout_fpb, meanerrout_fp, sim_repeats)
+                evaluator.create_sim_error_files("input/track_%03d.txt", out_eif_fpb, errout_eif_fpb, meanerrout_eif_fp, sim_repeats)
 
         print("Finished computing errors.\n")
 
@@ -307,4 +329,4 @@ def run_all(sim_repeats, do_measurement_gen, do_sim_run, do_sim_evaluate, do_plo
 
 
 if __name__ == '__main__':
-    run_all(SIM_REPEATS, DO_MEASUREMENT_GEN, DO_SIM_RUN, DO_SIM_EVALUATE, DO_PLOT_CREATE, DO_ENCODING, DO_TIMING, DO_DISTANCE)
+    run_all(SIM_REPEATS, DO_TRACK_GEN, DO_MEASUREMENT_GEN, DO_SIM_RUN, DO_SIM_EVALUATE, DO_PLOT_CREATE, DO_ENCODING, DO_TIMING, DO_DISTANCE)

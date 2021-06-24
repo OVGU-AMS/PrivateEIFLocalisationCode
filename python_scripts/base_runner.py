@@ -2,7 +2,7 @@ import numpy as np
 import os
 
 
-TRACK_DIFLEPATH_DEFAULT = "input/track1.txt"
+TRACK_FILEPATH_DEFAULT = "input/debug_track_%03d.txt"
 SENSOR_FILEPATH_BASE_DEFAULT = "input/encoding_128_32_sim_%03d_sensor%d.txt"
 OUTPUT_FILEPATH_BASE = "output/eif_encoding_128_32_nav_%03d.txt"
 NUM_SIMS_DEFAULT = 50
@@ -24,15 +24,14 @@ def run_normal_eif(track_filepath, sensor_filepath_base, output_filepath_base, n
     Q = q*np.array([[t**3/3,t**2/2,0,0],[t**2/2,t,0,0],[0,0,t**3/3,t**2/2],[0,0,t**2/2,t]])
     R = 5
 
-    with open(track_filepath, 'r') as track_f:
+    for sim in range(1, number_of_sims+1):
+        # Open track file
+        track_f = open(track_filepath % sim, 'r')
         timesteps = int(track_f.readline())
         dimension = int(track_f.readline())
         init_state = np.array([float(x) for x in track_f.readline().split()])
         init_cov = np.array([[float(x) for x in track_f.readline().split()] for _ in range(dimension)])
 
-    
-
-    for sim in range(1, number_of_sims+1):
         # Open all the sensor files
         sensor_files = [open(sensor_filepath_base % (sim, i)) for i in range(1, number_of_sensors+1)]
         sensor_locs = []
@@ -41,7 +40,6 @@ def run_normal_eif(track_filepath, sensor_filepath_base, output_filepath_base, n
             t = int(sen_f.readline())
             d = int(sen_f.readline())
             sensor_locs.append(np.array([float(x.strip()) for x in sen_f.readline().split()]))
-
 
         with open(output_filepath_base % sim, 'w') as output_f:
             state = init_state.copy()
@@ -81,13 +79,10 @@ def run_normal_eif(track_filepath, sensor_filepath_base, output_filepath_base, n
                 for r in range(dimension):
                     output_f.write("%lf %lf %lf %lf\n" % (cov[r][0], cov[r][1], cov[r][2], cov[r][3]))
                 
-
-                    
-
-
-    # Close all the sensor files
-    for i in sensor_files:
-        i.close()
+        # Close track and sensor files before next simulation
+        track_f.close()
+        for i in sensor_files:
+            i.close()
 
     # If directory was moved up, move it back down before ending
     if dir_moved:
@@ -99,4 +94,4 @@ def run_normal_eif(track_filepath, sensor_filepath_base, output_filepath_base, n
 
 
 if __name__ == '__main__':
-    run_normal_eif(TRACK_DIFLEPATH_DEFAULT, SENSOR_FILEPATH_BASE_DEFAULT, OUTPUT_FILEPATH_BASE, NUM_SIMS_DEFAULT, NUM_SENSORS_DEFAULT)
+    run_normal_eif(TRACK_FILEPATH_DEFAULT, SENSOR_FILEPATH_BASE_DEFAULT, OUTPUT_FILEPATH_BASE, NUM_SIMS_DEFAULT, NUM_SENSORS_DEFAULT)

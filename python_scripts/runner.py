@@ -9,7 +9,7 @@ import numpy as np
 
 
 # Defaults for when this file is run
-TRACK_FILEPATH_DEFAULT = "input/debug_track1.txt"
+TRACK_FILEPATH_DEFAULT = "input/debug_track_%03d.txt"
 SENSOR_FILEPATH_BASE_DEFAULT = "input/debug_sim_%03d_sensor%s.txt"
 OUTPUT_FILEPATH_BASE_DEFAULT = "output/debug_nav_%03d.txt"
 RUNTIME_OUTPUT_FILEPATH_DEFAULT = "output/debug_nav_times.txt"
@@ -29,7 +29,7 @@ def run_simulation_repeats(track_filepath, sensor_filepath_base, output_filepath
     runtimes = []
     for i in range(1, num_simulations+1):
         # Filepath commanline args for the simulation
-        track_fp = track_filepath
+        track_fp = track_filepath % i
         out_fp = output_filepath_base % i
         sensors_fpb = sensor_filepath_base % (i, "%d")
 
