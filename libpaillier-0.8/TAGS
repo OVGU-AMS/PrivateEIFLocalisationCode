@@ -1,0 +1,48 @@
+
+paillier.c,862
+init_rand(24,722
+complete_pubkey(42,1029
+complete_prvkey(49,1170
+paillier_keygen(58,1422
+paillier_enc(117,2783
+paillier_dec(157,3604
+paillier_mul(178,4085
+paillier_exp(188,4328
+paillier_plaintext_from_ui(197,4554
+paillier_plaintext_from_bytes(208,4781
+paillier_plaintext_to_bytes(220,5021
+paillier_plaintext_from_str(251,5666
+paillier_plaintext_to_str(257,5781
+paillier_ciphertext_from_bytes(270,6024
+paillier_ciphertext_to_bytes(282,6269
+paillier_pubkey_to_hex(298,6600
+paillier_prvkey_to_hex(304,6702
+paillier_pubkey_from_hex(310,6822
+paillier_prvkey_from_hex(325,7155
+paillier_freepubkey(338,7431
+paillier_freeprvkey(347,7584
+paillier_freeplaintext(355,7705
+paillier_freeciphertext(362,7803
+paillier_get_rand_file(369,7903
+paillier_get_rand_devrandom(389,8143
+paillier_get_rand_devurandom(395,8259
+paillier_create_enc_zero(401,8396
+
+paillier.h,498
+typedef struct pubkeyTag56,1917
+	int bits;58,1946
+	mpz_t n;59,1976
+	mpz_t n_squared;60,2018
+	mpz_t n_plusone;61,2071
+} paillier_pubkey_t;62,2124
+typedef struct prvkeyTag70,2410
+	mpz_t lambda;72,2439
+	mpz_t x;73,2494
+} paillier_prvkey_t;74,2541
+	mpz_t m;82,2729
+} paillier_plaintext_t;83,2740
+typedef struct ciphertextTag90,2949
+	mpz_t c;92,2982
+} paillier_ciphertext_t;93,2993
+typedef void (*paillier_get_rand_t)paillier_get_rand_t104,3457
+#define PAILLIER_BITS_TO_BYTES(267,9555

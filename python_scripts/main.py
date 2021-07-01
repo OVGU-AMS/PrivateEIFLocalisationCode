@@ -11,7 +11,7 @@ import plotter
 import track_generator
 
 # Process (gen., sim., eval., etc.) repeats 
-SIM_REPEATS = 10
+SIM_REPEATS = 2
 
 # Which part of process to do
 DO_TRACK_GEN = True
