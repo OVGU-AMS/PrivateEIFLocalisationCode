@@ -10,7 +10,7 @@ NUM_SENSORS_DEFAULT = 4
 
 
 # Run a non encryption extended information filter
-def run_normal_eif(track_filepath, sensor_filepath_base, output_filepath_base, number_of_sims, number_of_sensors):
+def run_normal_eif(track_filepath, sensor_filepath_base, output_filepath_base, number_of_sims, number_of_sensors, sim_range_to_run=None):
     # Always run from top project folder, if currently in python folder, move up
     dir_moved = False
     if os.getcwd().endswith('python_scripts'):
@@ -24,7 +24,14 @@ def run_normal_eif(track_filepath, sensor_filepath_base, output_filepath_base, n
     Q = q*np.array([[t**3/3,t**2/2,0,0],[t**2/2,t,0,0],[0,0,t**3/3,t**2/2],[0,0,t**2/2,t]])
     R = 5
 
-    for sim in range(1, number_of_sims+1):
+    # For manual running control, allow choosing exactly which sim numbers to run (in case of pc crashed/restarts/updates)
+    start_sim = 1
+    end_sim = number_of_sims+1
+    if sim_range_to_run:
+        start_sim = sim_range_to_run[0]
+        end_sim = sim_range_to_run[1]
+
+    for sim in range(start_sim, end_sim):
         # Open track file
         track_f = open(track_filepath % sim, 'r')
         timesteps = int(track_f.readline())

@@ -19,15 +19,22 @@ ENCODING_FRAC_BITSIZE_DEFAULT = 32
 NUM_SIMULATIONS_DEFAULT = 1
 
 
-def run_simulation_repeats(track_filepath, sensor_filepath_base, output_filepath_base, runtimes_filepath, num_sensors, paillier_bitsize, encoding_frac_bitsize, num_simulations):
+def run_simulation_repeats(track_filepath, sensor_filepath_base, output_filepath_base, runtimes_filepath, num_sensors, paillier_bitsize, encoding_frac_bitsize, num_simulations, sim_range_to_run=None):
     # Always run from top project folder, if currently in python folder, move up
     dir_moved = False
     if os.getcwd().endswith('python_scripts'):
         os.chdir('../')
         dir_moved = True
 
+    # For manual running control, allow choosing exactly which sim numbers to run (in case of pc crashed/restarts/updates)
+    start_sim = 1
+    end_sim = num_simulations+1
+    if sim_range_to_run:
+        start_sim = sim_range_to_run[0]
+        end_sim = sim_range_to_run[1]
+    
     runtimes = []
-    for i in range(1, num_simulations+1):
+    for i in range(start_sim, end_sim):
         # Filepath commanline args for the simulation
         track_fp = track_filepath % i
         out_fp = output_filepath_base % i

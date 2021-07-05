@@ -2,6 +2,7 @@
 
 """
 
+import time
 import numpy as np
 import generator
 import runner
@@ -11,7 +12,7 @@ import plotter
 import track_generator
 
 # Process (gen., sim., eval., etc.) repeats 
-SIM_REPEATS = 2
+SIM_REPEATS = 10
 
 # Which part of process to do
 DO_TRACK_GEN = True
@@ -21,9 +22,9 @@ DO_SIM_EVALUATE = True
 DO_PLOT_CREATE = True
 
 # Which scenarios to run
-DO_ENCODING = False
+DO_ENCODING = False # Outdated, don't use any longer (leave as False)
 DO_TIMING = True
-DO_DISTANCE = True
+DO_DISTANCE = False
 
 # EIF base simulations
 ENCODING_ONLY_EIF_BASE = False
@@ -79,7 +80,7 @@ def run_all(sim_repeats, do_track_gen, do_measurement_gen, do_sim_run, do_sim_ev
     encoding_fig_width = FIG_WIDTH_DEFAULT
 
     # Timing test params
-    timing_paillier_bitsizes_to_test = [512, 1024, 1536, 2048, 2560]
+    timing_paillier_bitsizes_to_test = [512, 1024, 1536, 2048]
     min_timing_sensors_to_test = 2
     max_timing_sensors_to_test = 5
     timing_fig_width = FIG_WIDTH_DEFAULT
@@ -192,11 +193,13 @@ def run_all(sim_repeats, do_track_gen, do_measurement_gen, do_sim_run, do_sim_ev
 
                     out_fpb = "output/timing_" + str(bitsize) + "_" + str(sensors) + "_nav_%03d.txt"
                     out_times_fp = "output/timing_" + str(bitsize) + "_" + str(sensors) + "_nav_times.txt"
+
+                    range_to_run = None
                     runner.run_simulation_repeats("input/track_%03d.txt",
                                                     "input/timing_sim_%03d_sensor%s.txt",
                                                     out_fpb,
                                                     out_times_fp,
-                                                    sensors, bitsize, 32, sim_repeats)
+                                                    sensors, bitsize, 32, sim_repeats, sim_range_to_run=range_to_run)
 
         # Run all distance sims
         if do_distance:
@@ -207,14 +210,14 @@ def run_all(sim_repeats, do_track_gen, do_measurement_gen, do_sim_run, do_sim_ev
                 out_times_fp = "output/layout_" + layout + "_nav_times.txt"
                 out_eif_fpb = "output/eif_layout_" + layout + "_nav_%03d.txt"
 
+                range_to_run = None
                 if not DISTANCE_ONLY_EIF_BASE:
                     runner.run_simulation_repeats("input/track_%03d.txt",
                                                     in_fpb,
                                                     out_fpb,
                                                     out_times_fp,
-                                                    4, 1024, 32, sim_repeats)
-
-                base_runner.run_normal_eif("input/track_%03d.txt", in_fpb, out_eif_fpb, sim_repeats, 4)
+                                                    4, 512, 32, sim_repeats, sim_range_to_run=range_to_run)
+                base_runner.run_normal_eif("input/track_%03d.txt", in_fpb, out_eif_fpb, sim_repeats, 4, sim_range_to_run=range_to_run)
 
         print("Finished running simulations.\n")
 

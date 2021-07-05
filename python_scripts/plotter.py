@@ -6,9 +6,9 @@ import os
 
 
 # Single plot defaults when this file is run
-TRACK_FILEPATH_DEFAULT = "input/track_002.txt"
-OUTPUT_FILEPATH_DEFAULT = "output/layout_normal_nav_002.txt"
-SENSOR_FILEPATH_BASE = "input/layout_normal_sim_002_sensor%d.txt"
+TRACK_FILEPATH_DEFAULT = "input/track_117.txt"
+OUTPUT_FILEPATH_DEFAULT = "output/layout_big_nav_117.txt"
+SENSOR_FILEPATH_BASE = "input/layout_big_sim_117_sensor%d.txt"
 NUM_SENSORS_DEFAULT = 4
 ADDITIONAL_SENSOR_LOCATIONS_DEFAULT = []
 
@@ -111,7 +111,7 @@ def create_timing_plots(output_times_filepath_base, sensor_count_list, bitsize_l
     fig.supylabel(r'Runtime ($s$)')
 
     # Legend
-    fig.legend(handles=plot_handles, title='Key Length (bits)', loc='upper center', ncol=3)
+    fig.legend(handles=plot_handles, title='Key Length (bits)', loc='upper center', ncol=2)
 
     if matplotlib.get_backend() == 'pgf':
         plt.savefig('pictures/timing.pdf')
