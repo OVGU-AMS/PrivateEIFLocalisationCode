@@ -12,19 +12,19 @@ import plotter
 import track_generator
 
 # Process (gen., sim., eval., etc.) repeats 
-SIM_REPEATS = 10
+SIM_REPEATS = 1000
 
 # Which part of process to do
-DO_TRACK_GEN = True
-DO_MEASUREMENT_GEN = True
+DO_TRACK_GEN = False
+DO_MEASUREMENT_GEN = False
 DO_SIM_RUN = True
 DO_SIM_EVALUATE = True
-DO_PLOT_CREATE = True
+DO_PLOT_CREATE = False
 
 # Which scenarios to run
 DO_ENCODING = False # Outdated, don't use any longer (leave as False)
-DO_TIMING = True
-DO_DISTANCE = False
+DO_TIMING = False
+DO_DISTANCE = True
 
 # EIF base simulations
 ENCODING_ONLY_EIF_BASE = False

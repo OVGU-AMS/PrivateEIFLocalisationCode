@@ -55,7 +55,7 @@ def create_sim_error_files(track_filepath, sim_output_filepath_base, error_outpu
                         continue
 
                     # Compute and save the error
-                    e = np.linalg.norm(gt - est)
+                    e = sum((gt - est)**2)
                     errors.append(e)
 
         # Save all sim errors

@@ -233,7 +233,7 @@ def create_distance_plots(output_filepath_base, distance_layout_list, distance_l
 
     # Shared axis labels
     fig.supxlabel(r'Filter Timesteps')
-    fig.supylabel(r'Simulation Error (RMSE)')
+    fig.supylabel(r'Simulation Error (MSE)')
 
     # Legend only uses lines from first plot (all are the same colours)
     fig.legend((enc_plot_handles[0], eif_plot_handles[0], diff_plot_handles[0]), (r'Privacy-preserving Filter', r'Standard EIF', r'Difference'), loc='upper center', ncol=1)
